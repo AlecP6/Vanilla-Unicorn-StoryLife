@@ -268,10 +268,7 @@ const sectionTitles = {
   'comptabilite':  'Comptabilité',
   'armement':      'Personnel',
   'groupes':       'Contacts',
-  'resume-tables': 'Comptes-rendus',
-  'vehicule':      'Véhicules',
   'missions':      'Événements',
-  'territoires':   'Territoires',
   'admin':         'Administration',
 };
 
@@ -328,10 +325,6 @@ function switchSection(targetId) {
       fetchAdminUsers();
       fetchLogs();
       fetchTransactions();
-    }
-    if (targetId === 'territoires') {
-      fetchGroups();
-      setTimeout(initMap, 80);
     }
   }
 }
@@ -1773,25 +1766,22 @@ document.getElementById('btnRefreshCotisations')?.addEventListener('click', fetc
 async function refreshDashboard() {
   try {
     // Toutes les requêtes sont lancées simultanément plutôt que séquentiellement.
-    const [txRes, wRes, vRes, gRes, mRes, membRes, missRes] = await Promise.all([
+    const [txRes, wRes, gRes, mRes, missRes] = await Promise.all([
       fetch(`${API}/transactions`,  { headers: authHeaders() }),
       fetch(`${API}/weapons`,       { headers: authHeaders() }),
-      fetch(`${API}/vehicles`,      { headers: authHeaders() }),
       fetch(`${API}/groups`,        { headers: authHeaders() }),
-      fetch(`${API}/members`,       { headers: authHeaders() }),
       fetch(`${API}/members`,       { headers: authHeaders() }),
       fetch(`${API}/missions`,      { headers: authHeaders() }),
     ]);
-    const [txData, wData, vData, gData, mData, missData] = await Promise.all([
-      txRes.json(), wRes.json(), vRes.json(), gRes.json(), mRes.json(), missRes.json(),
+    const [txData, wData, gData, mData, missData] = await Promise.all([
+      txRes.json(), wRes.json(), gRes.json(), mRes.json(), missRes.json(),
     ]);
 
     const balance  = txData.reduce((s, t) => s + (t.type === 'entree' ? t.amount : -t.amount), 0);
     const missions = missData.filter ? missData.filter(m => m.status === 'en_cours') : [];
 
-    animateCounter(document.getElementById('dashBalance'),  balance,                            formatAmount);
+    animateCounter(document.getElementById('dashBalance'),  balance, formatAmount);
     animateCounter(document.getElementById('dashWeapons'),  Array.isArray(wData) ? wData.length : 0);
-    animateCounter(document.getElementById('dashVehicles'), Array.isArray(vData) ? vData.length : 0);
     animateCounter(document.getElementById('dashGroups'),   Array.isArray(gData) ? gData.length : 0);
     animateCounter(document.getElementById('dashMembers'),  Array.isArray(mData) ? mData.length : 0);
     animateCounter(document.getElementById('dashMissions'), missions.length);
@@ -1811,24 +1801,7 @@ async function refreshDashboard() {
         : '<p class="dash-empty">Aucune transaction.</p>';
     }
 
-    // Dernier résumé — requête séparée car non incluse dans le Promise.all initial.
-    const summEl = document.getElementById('dashLastSummary');
-    if (summEl) {
-      const last = txData.length ? null : null; // placeholder non utilisé, summaries chargés ci-dessous
-      const summRes = await fetch(`${API}/summaries`, { headers: authHeaders() });
-      const summData = await summRes.json();
-      if (summData.length) {
-        const s = summData[0];
-        summEl.innerHTML = `
-          <div class="dash-summary-title">${escapeHtml(s.title)}</div>
-          <div class="dash-summary-date">📅 ${formatEventDate(s.event_date)} — ${escapeHtml(s.created_by_name || '—')}</div>
-          <div class="dash-summary-content">${escapeHtml(s.content.slice(0, 200))}${s.content.length > 200 ? '…' : ''}</div>`;
-      } else {
-        summEl.innerHTML = '<p class="dash-empty">Aucun compte-rendu publié.</p>';
-      }
-    }
-
-    // Missions actives
+    // Événements actifs
     const missEl = document.getElementById('dashMissionsList');
     if (missEl) {
       missEl.innerHTML = missions.length ? missions.slice(0, 4).map(m => `
@@ -2115,16 +2088,11 @@ async function openMemberProfile(memberId) {
     document.getElementById('profileSince').textContent      = `Membre depuis le ${new Date(user.created_at).toLocaleDateString('fr-FR')}`;
     document.getElementById('profileAvatar').textContent     = user.rp_name.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('profileTxCount').textContent    = tx.length;
-    document.getElementById('profileWeaponCount').textContent  = w.length;
-    document.getElementById('profileVehicleCount').textContent = v.length;
+    document.getElementById('profileWeaponCount').textContent = w.length;
 
     document.getElementById('profileWeapons').innerHTML = w.length
       ? w.map(x => `<div class="profile-item"><span>${escapeHtml(x.name)}</span><span class="profile-item-sub">${escapeHtml(x.category)}</span></div>`).join('')
-      : '<p class="dash-empty">Aucune arme attribuée.</p>';
-
-    document.getElementById('profileVehicles').innerHTML = v.length
-      ? v.map(x => `<div class="profile-item"><span>${escapeHtml(x.name)}</span><span class="profile-item-sub">${escapeHtml(x.category)}</span></div>`).join('')
-      : '<p class="dash-empty">Aucun véhicule attribué.</p>';
+      : '<p class="dash-empty">Aucune affectation.</p>';
 
     document.getElementById('profileTx').innerHTML = tx.length
       ? tx.map(t => `
@@ -2154,335 +2122,3 @@ document.getElementById('adminUsersTbody')?.addEventListener('click', (e) => {
   }
 }, true);
 
-// ===== TERRITOIRES — CARTE GTA 5 =====
-// Définition statique des zones géographiques de GTA V avec leurs polygones.
-// Les coordonnées sont exprimées dans le système de pixels de l'image de carte (1920×1920px).
-// En Leaflet CRS.Simple, les points sont [lat, lng] ce qui correspond à [y, x] en pixels image.
-// Ces polygones peuvent être remplacés par des versions personnalisées via l'éditeur de zones.
-const GTA_ZONES = [
-  { id: 'paleto_bay',     name: 'Paleto Bay',          polygon: [[1744,888],[1717,918],[1690,942],[1667,959],[1646,977],[1619,976],[1609,924],[1593,898],[1569,869],[1556,852],[1543,827],[1547,803],[1558,777],[1581,777],[1605,782],[1625,812],[1636,834],[1654,838],[1657,852],[1668,863],[1684,873],[1703,874],[1716,885]] },
-  { id: 'paleto_cove',    name: 'Paleto Cove',         polygon: [[1577,178],[1577,262],[1379,262],[1379,178]] },
-  { id: 'grapeseed',      name: 'Grapeseed',           polygon: [[1393,1139],[1373,1133],[1356,1132],[1337,1143],[1327,1159],[1327,1193],[1332,1208],[1340,1209],[1342,1229],[1331,1224],[1331,1238],[1336,1255],[1323,1262],[1304,1262],[1283,1258],[1289,1275],[1312,1300],[1339,1298],[1378,1289],[1400,1277],[1416,1257],[1428,1225],[1430,1198],[1425,1180],[1396,1159],[1403,1161]] },
-  { id: 'alamo_sea',      name: 'Alamo Sea',           polygon: [[1275,854],[1252,847],[1227,859],[1202,864],[1211,892],[1209,903],[1191,907],[1160,903],[1171,925],[1186,937],[1181,977],[1196,1017],[1190,1075],[1212,1116],[1234,1143],[1239,1180],[1228,1216],[1246,1246],[1271,1247],[1298,1250],[1313,1255],[1318,1245],[1334,1253],[1330,1224],[1340,1231],[1345,1227],[1341,1211],[1330,1206],[1323,1183],[1321,1168],[1329,1166],[1321,1157],[1317,1143],[1309,1130],[1294,1114],[1280,1103],[1270,1087],[1280,1082],[1286,1075],[1280,1052],[1272,1044],[1285,1032],[1270,1021],[1265,989],[1266,956],[1272,917]] },
-  { id: 'sandy_shores',   name: 'Sandy Shores',        polygon: [[1174,926],[1159,937],[1170,1062],[1163,1131],[1210,1217],[1227,1208],[1235,1188],[1241,1163],[1224,1139],[1206,1103],[1191,1075],[1190,1035],[1196,1018],[1188,995],[1182,978],[1184,958],[1185,937]] },
-  { id: 'mount_chiliad',  name: 'Mount Chiliad',       polygon: [[1540,828],[1459,812],[1402,797],[1349,832],[1312,903],[1281,1011],[1322,1006],[1331,1144],[1390,1137],[1426,1179],[1431,1217],[1416,1269],[1534,1235],[1597,1160],[1614,1087],[1616,1001],[1604,921]] },
-  { id: 'zancudo',        name: 'Fort Zancudo',        polygon: [[1150,424],[1125,430],[1099,460],[1072,482],[1061,534],[1044,579],[1048,620],[1086,635],[1120,630],[1153,577],[1161,536],[1139,486],[1155,458]] },
-  { id: 'chumash',        name: 'Chumash',             polygon: [[1339,541],[1333,576],[1325,548],[1288,534],[1260,518],[1226,506],[1213,502],[1211,486],[1224,482],[1242,491],[1258,490],[1280,496],[1313,524]] },
-  { id: 'banham_canyon',  name: 'Banham Canyon',       polygon: [[780,540],[780,700],[620,700],[620,540]] },
-  { id: 'pacific_bluffs', name: 'Pacific Bluffs',      polygon: [[832,382],[826,400],[752,402],[696,425],[629,443],[574,541],[561,532],[618,421],[642,398],[663,392],[712,402],[747,375],[771,351]] },
-  { id: 'richman',        name: 'Richman',             polygon: [[648,602],[602,635],[618,665],[598,720],[606,741],[687,693],[682,664],[669,627]] },
-  { id: 'vinewood_hills', name: 'Vinewood Hills',      polygon: [[779,768],[766,812],[788,843],[782,890],[778,935],[746,919],[723,896],[717,868],[719,813],[709,763],[724,720],[717,688],[703,665],[719,664],[753,711]] },
-  { id: 'north_vinewood', name: 'North Vinewood',      polygon: [[980,820],[980,960],[840,960],[840,820]] },
-  { id: 'vinewood',       name: 'Vinewood',            polygon: [[651,1000],[581,955],[626,774],[682,751],[708,774],[712,818]] },
-  { id: 'downtown_ls',    name: 'Downtown LS',         polygon: [[546,820],[442,816],[438,965],[537,962]] },
-  { id: 'little_seoul',   name: 'Little Seoul',        polygon: [[528,812],[457,809],[430,787],[442,765],[476,744],[498,720],[510,713],[527,751]] },
-  { id: 'strawberry',     name: 'Strawberry',          polygon: [[428,821],[431,962],[382,973],[386,823]] },
-  { id: 'davis',          name: 'Davis',               polygon: [[305,843],[305,893],[347,894],[357,922],[378,906],[371,868],[343,866],[340,840]] },
-  { id: 'chamberlain',    name: 'Chamberlain Hills',   polygon: [[349,855],[364,887],[373,874],[400,875],[411,861],[402,844],[385,839],[361,839]] },
-  { id: 'south_ls',       name: 'South LS',            polygon: [[434,812],[381,815],[351,853],[313,896],[290,939],[340,977],[383,974],[430,960]] },
-  { id: 'elysian_island', name: 'Elysian Island',      polygon: [[576,541],[598,553],[605,571],[598,589],[585,601],[581,624],[594,636],[565,663],[516,617]] },
-  { id: 'port_ls',        name: 'Port de LS',          polygon: [[251,813],[190,793],[173,799],[209,850],[191,885],[207,904],[114,898],[113,930],[183,933],[206,941],[205,948],[112,949],[118,975],[156,979],[110,999],[107,1081],[177,1074],[178,999],[209,996],[238,972],[252,947],[258,905],[262,842]] },
-  { id: 'east_ls',        name: 'East LS',             polygon: [[261,815],[193,791],[173,800],[206,849],[190,891],[113,896],[113,927],[184,931],[193,945],[175,945],[101,949],[118,974],[173,973],[109,994],[105,1084],[154,1079],[181,1073],[184,1003],[215,998],[203,1072],[203,1160],[249,1209],[272,1221],[272,1250],[292,1254],[298,1286],[359,1300],[413,1330],[425,1317],[381,1301],[389,1269],[422,1274],[434,1293],[471,1304],[529,1322],[527,1283],[516,1231],[473,1166],[422,1137],[400,1111],[397,1082],[403,1048],[401,1021],[399,978],[358,976],[313,975],[255,980]] },
-  { id: 'cypress_flats',  name: 'Cypress Flats',       polygon: [[980,536],[922,542],[923,564],[913,575],[898,572],[898,587],[907,590],[909,604],[915,605],[916,618],[928,623],[942,622],[950,638],[962,642],[986,640],[987,629],[1000,619],[986,583]] },
-  { id: 'la_mesa',        name: 'La Mesa',             polygon: [[553,950],[547,1003],[493,1018],[460,1035],[417,1034],[409,1066],[400,975],[439,960]] },
-  { id: 'murrieta',       name: 'Murrieta Heights',    polygon: [[960,1160],[960,1320],[800,1320],[800,1160]] },
-  { id: 'downtown_vinew', name: 'Downtown Vinewood',   polygon: [[615,841],[556,841],[550,929],[578,952]] },
-  { id: 'mirror_park',    name: 'Mirror Park',         polygon: [[613,1002],[534,1007],[501,1059],[506,1101],[541,1097],[576,1071],[593,1044]] },
-  { id: 'banning',        name: 'Banning',             polygon: [[560,1460],[560,1600],[420,1600],[420,1460]] },
-  { id: 'tataviam',       name: 'Tataviam Mountains',  polygon: [[1100,400],[1100,600],[940,600],[940,400]] },
-  { id: 'grand_senora',   name: 'Grand Senora Desert', polygon: [[721,1075],[810,1130],[906,1145],[977,1157],[989,1093],[1006,1059],[1014,1014],[982,991],[908,996]] },
-  { id: 'harmony',        name: 'Harmony',             polygon: [[1131,916],[1109,987],[1079,990],[1049,981],[1032,926],[1082,913]] },
-  { id: 'recession_pool', name: 'Ron Alternates Wind', polygon: [[780,820],[780,960],[640,960],[640,820]] },
-  { id: 'great_ocean',    name: 'Great Ocean Hwy',     polygon: [[500,640],[500,820],[340,820],[340,640]] },
-  { id: 'pacific_ocean',  name: 'Raton Canyon',        polygon: [[860,500],[860,680],[700,680],[700,500]] },
-  { id: 'senora_way',     name: 'Route de Senora',     polygon: [[1060,700],[1060,860],[900,860],[900,700]] },
-];
-
-// Numéro de version du jeu de zones par défaut. À incrémenter si les polygones statiques
-// changent de manière incompatible : cela force la suppression des données localStorage
-// de l'utilisateur pour repartir des nouvelles définitions.
-const ZONES_VERSION = 5;
-if (parseInt(localStorage.getItem('cc_zones_version') || '0') < ZONES_VERSION) {
-  localStorage.removeItem('cc_custom_zones');
-  localStorage.setItem('cc_zones_version', String(ZONES_VERSION));
-}
-
-// Surcharge les polygones statiques de GTA_ZONES par les versions personnalisées
-// que l'utilisateur a dessinées via l'éditeur et sauvegardées dans localStorage.
-function loadCustomZones() {
-  const saved = localStorage.getItem('cc_custom_zones');
-  if (!saved) return;
-  try {
-    JSON.parse(saved).forEach(({ id, polygon }) => {
-      const z = GTA_ZONES.find(z => z.id === id);
-      if (z) z.polygon = polygon;
-    });
-  } catch {}
-}
-
-// Persiste un polygone personnalisé dans localStorage en mettant à jour l'entrée existante
-// ou en en ajoutant une nouvelle si la zone n'avait pas encore été modifiée.
-function saveCustomZone(id, polygon) {
-  let custom = [];
-  try { custom = JSON.parse(localStorage.getItem('cc_custom_zones') || '[]'); } catch {}
-  const idx = custom.findIndex(c => c.id === id);
-  if (idx !== -1) custom[idx].polygon = polygon; else custom.push({ id, polygon });
-  localStorage.setItem('cc_custom_zones', JSON.stringify(custom));
-}
-
-// ─── Variables d'état de la carte et de l'éditeur ───
-let gtaMap        = null;     // Instance Leaflet (null avant initMap)
-let mapLayers     = {};       // Dictionnaire id → couche Leaflet des polygones actifs
-let editorMode    = false;    // Vrai quand le mode dessin de zone est activé
-let editorPoints  = [];       // Points [lat, lng] cliqués durant le dessin en cours
-let editorMarkers = [];       // Marqueurs Leaflet correspondant aux points cliqués
-let editorPreview = null;     // Polygone en pointillés montrant l'aperçu du tracé
-let editorZoneId  = null;     // Id de la zone GTA_ZONES en cours d'édition
-let mapInitialized = false;   // Guard pour éviter une double-initialisation de la carte
-
-// Initialise la carte Leaflet avec CRS.Simple (pas de projection géographique) :
-// adapté pour une image de carte de jeu vidéo. L'image GTA 5 (1920×1920 px) est
-// utilisée comme fond. La double-initialisation est bloquée par `mapInitialized`.
-function initMap() {
-  if (mapInitialized) { gtaMap?.invalidateSize(); return; }
-  const el = document.getElementById('gtaMap');
-  if (!el || typeof L === 'undefined') return;
-
-  // Charge les polygones personnalisés avant d'afficher la carte.
-  loadCustomZones();
-
-  const W = 1920, H = 1920;
-  // CRS.Simple : coordonnées en pixels, y croissant vers le haut (comme Leaflet lat).
-  const crs = L.CRS.Simple;
-  gtaMap = L.map('gtaMap', {
-    crs, minZoom: -2, maxZoom: 2, zoom: -1,
-    center: [H / 2, W / 2],
-    attributionControl: false,
-    dragging:         true,
-    touchZoom:        true,
-    scrollWheelZoom:  true,
-    doubleClickZoom:  false,   // désactivé pour ne pas interférer avec l'éditeur
-    boxZoom:          false,
-    keyboard:         false,
-  });
-
-  L.imageOverlay('gta5-map.jpg', [[0,0],[H,W]], {
-    opacity: 1,
-    className: 'gta-map-img',
-  }).addTo(gtaMap);
-
-  gtaMap.fitBounds([[0,0],[H,W]], { animate: false });
-  mapInitialized = true;
-
-  // Affiche les coordonnées pixel en temps réel dans la barre d'outils lors du survol.
-  gtaMap.on('mousemove', (e) => {
-    const { lat, lng } = e.latlng;
-    const x = Math.round(lng), y = Math.round(H - lat);
-    document.getElementById('mapCoordDisplay').textContent =
-      `x: ${x}  y: ${y}   [lat: ${Math.round(lat)}, lng: ${x}]`;
-    if (editorMode && editorPoints.length > 0) updateEditorPreview();
-  });
-
-  // Clic en mode éditeur
-  gtaMap.on('click', (e) => {
-    if (!editorMode || !editorZoneId) return;
-    const pt = [Math.round(e.latlng.lat), Math.round(e.latlng.lng)];
-    editorPoints.push(pt);
-    const marker = L.circleMarker([pt[0], pt[1]], {
-      radius: 5, color: '#fff', fillColor: '#4caf82', fillOpacity: 1, weight: 2,
-    }).addTo(gtaMap);
-    editorMarkers.push(marker);
-    updateEditorPreview();
-    updateEditorCoordsOutput();
-  });
-
-  refreshMapOverlays();
-  initMapEditor();
-}
-
-// Supprime tous les polygones de groupes existants sur la carte et les redessine
-// depuis le cache `groups`. Appelée après chaque création/modification/suppression de groupe.
-function refreshMapOverlays() {
-  if (!gtaMap) return;
-  Object.values(mapLayers).forEach(l => gtaMap.removeLayer(l));
-  mapLayers = {};
-
-  // Dessine un polygone coloré pour chaque zone assignée à un groupe.
-  groups.forEach(g => {
-    if (!g.zone_ids || !g.color) return;
-    g.zone_ids.split(',').filter(Boolean).forEach(zid => {
-      const zone = GTA_ZONES.find(z => z.id === zid.trim());
-      if (!zone) return;
-      const poly = L.polygon(zone.polygon, {
-        color: g.color, weight: 2, fillColor: g.color, fillOpacity: 0.25,
-      }).addTo(gtaMap).bindTooltip(g.name, { permanent: false });
-      mapLayers[`${g.id}_${zid}`] = poly;
-    });
-  });
-
-  renderMapLegend();
-}
-
-// Génère ou régénère la légende flottante sur la carte, listant les groupes
-// qui ont au moins une zone assignée. La légende précédente est supprimée avant recréation.
-function renderMapLegend() {
-  const wrapper = document.querySelector('.map-wrapper');
-  if (!wrapper) return;
-  const existing = wrapper.querySelector('.map-legend');
-  if (existing) existing.remove();
-
-  const claimed = groups.filter(g => g.zone_ids && g.zone_ids.trim() && g.color);
-  if (claimed.length === 0) return;
-
-  const legend = document.createElement('div');
-  legend.className = 'map-legend';
-  legend.innerHTML = `<div class="map-legend-title">Groupes</div>` +
-    claimed.map(g => `
-      <div class="map-legend-item">
-        <span class="map-legend-dot" style="background:${g.color}"></span>
-        ${escapeHtml(g.name)}
-      </div>`).join('');
-  wrapper.appendChild(legend);
-}
-
-// Met à jour le polygone de prévisualisation en pointillés pendant le tracé d'une zone.
-// L'ancien aperçu est détruit avant d'en créer un nouveau pour éviter les doublons.
-// Requiert au moins 2 points pour tracer une forme.
-function updateEditorPreview() {
-  if (editorPreview) { gtaMap.removeLayer(editorPreview); editorPreview = null; }
-  if (editorPoints.length < 2) return;
-  editorPreview = L.polygon(editorPoints, {
-    color: '#4caf82', weight: 2, dashArray: '6,4', fillColor: '#4caf82', fillOpacity: 0.15,
-  }).addTo(gtaMap);
-}
-
-function updateEditorCoordsOutput() {
-  const out = document.getElementById('editorCoordsOutput');
-  if (out) out.textContent = JSON.stringify(editorPoints);
-}
-
-// Câble tous les contrôles de la barre d'outils de l'éditeur de zones :
-// - Bouton toggle : active/désactive le mode édition et affiche/masque les contrôles.
-// - Bouton "Tracer" : démarre un nouveau dessin pour la zone sélectionnée.
-// - Bouton "Effacer" : annule le tracé en cours.
-// - Bouton "Sauvegarder" : valide le polygone (min. 3 points) et le persiste dans localStorage.
-function initMapEditor() {
-  const btnToggle   = document.getElementById('btnToggleEditor');
-  const zoneSelect  = document.getElementById('editorZoneSelect');
-  const btnStart    = document.getElementById('btnStartDraw');
-  const btnClear    = document.getElementById('btnClearDraw');
-  const btnSave     = document.getElementById('btnSaveZone');
-  const coordsPanel = document.getElementById('editorCoordsPanel');
-
-  // Peuple le select avec toutes les zones disponibles (noms lisibles).
-  GTA_ZONES.forEach(z => {
-    const opt = document.createElement('option');
-    opt.value = z.id; opt.textContent = z.name;
-    zoneSelect?.appendChild(opt);
-  });
-
-  btnToggle?.addEventListener('click', () => {
-    editorMode = !editorMode;
-    btnToggle.textContent = editorMode ? '✕ Quitter éditeur' : '✏️ Mode édition zones';
-    btnToggle.classList.toggle('active', editorMode);
-    const show = editorMode ? '' : 'none';
-    [zoneSelect, btnStart, btnClear, btnSave].forEach(el => { if (el) el.style.display = show; });
-    if (coordsPanel) coordsPanel.style.display = editorMode ? '' : 'none';
-    if (!editorMode) {
-      clearEditorDraw();
-      gtaMap.getContainer().classList.remove('map-editor-active');
-    }
-  });
-
-  btnStart?.addEventListener('click', () => {
-    editorZoneId = zoneSelect?.value;
-    if (!editorZoneId) { showToast('Choisissez une zone d\'abord.', 'warning'); return; }
-    clearEditorDraw();
-    gtaMap.getContainer().classList.add('map-editor-active');
-  });
-
-  btnClear?.addEventListener('click', clearEditorDraw);
-
-  btnSave?.addEventListener('click', () => {
-    if (!editorZoneId || editorPoints.length < 3) {
-      showToast('Tracez au moins 3 points avant de sauvegarder.', 'warning'); return;
-    }
-    saveCustomZone(editorZoneId, [...editorPoints]);
-    const zone = GTA_ZONES.find(z => z.id === editorZoneId);
-    if (zone) zone.polygon = [...editorPoints];
-    showToast(`Zone "${zone?.name}" sauvegardée !`, 'success');
-    clearEditorDraw();
-    refreshMapOverlays();
-  });
-}
-
-// Réinitialise complètement l'état du dessin en cours : vide le tableau de points,
-// supprime les marqueurs de clic et la prévisualisation de la carte.
-function clearEditorDraw() {
-  editorPoints = [];
-  editorMarkers.forEach(m => gtaMap?.removeLayer(m));
-  editorMarkers = [];
-  if (editorPreview) { gtaMap?.removeLayer(editorPreview); editorPreview = null; }
-  updateEditorCoordsOutput();
-  gtaMap?.getContainer().classList.remove('map-editor-active');
-}
-
-// ===== EXPORT ZONES =====
-// Permet à l'utilisateur d'exporter ses polygones personnalisés depuis localStorage
-// sous forme de JSON lisible, pour les partager ou les sauvegarder manuellement.
-document.getElementById('btnExportZones')?.addEventListener('click', () => {
-  const raw   = localStorage.getItem('cc_custom_zones');
-  const data  = raw ? JSON.parse(raw) : [];
-  const textarea = document.getElementById('exportZonesData');
-  if (!textarea) return;
-  if (data.length === 0) {
-    showToast('Aucun tracé personnalisé trouvé dans ce navigateur.', 'warning');
-    return;
-  }
-  textarea.value = JSON.stringify(data, null, 2);
-  openModal('exportZonesModal');
-});
-
-document.getElementById('btnCopyZones')?.addEventListener('click', () => {
-  const ta = document.getElementById('exportZonesData');
-  if (!ta) return;
-  ta.select();
-  navigator.clipboard?.writeText(ta.value)
-    .then(() => showToast('Tracés copiés dans le presse-papier !'))
-    .catch(() => showToast('Sélectionne le texte et fais Ctrl+C manuellement.', 'warning'));
-});
-
-document.getElementById('exportZonesClose')?.addEventListener('click', () => closeModal('exportZonesModal'));
-document.getElementById('exportZonesModal')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('exportZonesModal')) closeModal('exportZonesModal');
-});
-
-// ===== DATE DISPLAY =====
-// Affiche la date courante dans la topbar au format long (ex : "Samedi 18 avril 2026").
-// La première lettre est mise en majuscule car toLocaleDateString retourne parfois en minuscule.
-function updateDate() {
-  const now     = new Date();
-  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  const fmt     = now.toLocaleDateString('fr-FR', options);
-  const el      = document.getElementById('dateDisplay');
-  if (el) el.textContent = fmt.charAt(0).toUpperCase() + fmt.slice(1);
-}
-
-updateDate();
-
-// ===== ADMIN COLLAPSIBLE SECTIONS =====
-// Rend les en-têtes des cartes admin cliquables pour réduire/agrandir leur contenu.
-// Les clics sur le bouton "Actualiser" (btn-refresh) sont ignorés pour ne pas déclencher
-// le toggle en même temps qu'un rechargement des données.
-document.querySelectorAll('.admin-card-header-toggle').forEach(header => {
-  header.addEventListener('click', (e) => {
-    if (e.target.closest('.btn-refresh')) return;
-    const targetId = header.dataset.target;
-    const body = document.getElementById(targetId);
-    const btn = header.querySelector('.btn-collapse-toggle');
-    if (!body || !btn) return;
-    const isCollapsed = body.classList.toggle('collapsed');
-    // Adapte l'icône du bouton selon l'état (+ = réduit, − = ouvert).
-    btn.textContent = isCollapsed ? '+' : '−';
-  });
-});

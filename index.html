@@ -6,7 +6,6 @@
   <title>Vanilla Unicorn — Gestion</title>
   <link rel="icon" type="image/png" href="image.png" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 </head>
@@ -43,8 +42,7 @@
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-box">
       <div class="auth-logo">
-        <span>🦄</span>
-        <span class="auth-logo-text">Vanilla Unicorn</span>
+        <img src="image.png" alt="Vanilla Unicorn" class="auth-logo-img" />
       </div>
 
       <!-- Connexion -->
@@ -112,7 +110,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo">
-        <span class="logo-text">✦ VANILLA UNICORN</span>
+        <img src="image.png" alt="Vanilla Unicorn" class="logo-img" />
       </div>
     </div>
 
@@ -143,24 +141,6 @@
           </a>
         </li>
         <li>
-          <a href="#" class="nav-item" data-section="resume-tables">
-            <span class="nav-icon">📋</span>
-            <span class="nav-label">Comptes-rendus</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" class="nav-item" data-section="vehicule">
-            <span class="nav-icon">🚗</span>
-            <span class="nav-label">Véhicule</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" class="nav-item" data-section="territoires">
-            <span class="nav-icon">🗺️</span>
-            <span class="nav-label">Territoires</span>
-          </a>
-        </li>
-        <li>
           <a href="#" class="nav-item" data-section="missions">
             <span class="nav-icon">🎭</span>
             <span class="nav-label">Événements</span>
@@ -177,7 +157,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      <img src="image.png" alt="Vanilla Unicorn" class="sidebar-img" />
       <span class="version">v1.1.0</span>
     </div>
   </aside>
@@ -219,10 +198,6 @@
             <div class="stat-label">Personnel actif</div>
             <div class="stat-value" id="dashWeapons">0</div>
           </div>
-          <div class="stat-card stat-expense">
-            <div class="stat-label">Véhicules en service</div>
-            <div class="stat-value" id="dashVehicles">0</div>
-          </div>
           <div class="stat-card">
             <div class="stat-label">Contacts / Partenaires</div>
             <div class="stat-value" id="dashGroups">0</div>
@@ -244,13 +219,6 @@
               <h2>💸 Dernières transactions</h2>
             </div>
             <div id="dashRecentTx" class="dash-list"></div>
-          </div>
-          <!-- Dernier résumé -->
-          <div class="dash-card">
-            <div class="dash-card-header">
-              <h2>📋 Dernier compte-rendu</h2>
-            </div>
-            <div id="dashLastSummary" class="dash-summary-preview"></div>
           </div>
           <!-- Missions actives -->
           <div class="dash-card">
@@ -560,172 +528,6 @@
 
       </section>
 
-      <!-- Comptes-rendus -->
-      <section class="section" id="section-resume-tables">
-        <div class="section-header">
-          <h1><span class="section-icon">📋</span> Comptes-rendus</h1>
-          <p class="section-desc">Historique des réunions et décisions de direction.</p>
-        </div>
-
-        <!-- Formulaire ajout compte-rendu -->
-        <div class="form-card" id="summaryFormCard">
-          <h2 class="form-title">Nouveau compte-rendu</h2>
-          <div class="summary-form-grid">
-            <div class="form-group">
-              <label class="form-label" for="summaryTitle">Titre</label>
-              <input type="text" id="summaryTitle" class="form-input" placeholder="ex: Réunion de direction, Décision RH, Bilan hebdo..." autocomplete="off" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="summaryDate">Date de l'événement</label>
-              <input type="date" id="summaryDate" class="form-input" />
-            </div>
-            <div class="form-group form-group-full">
-              <label class="form-label" for="summaryContent">Contenu</label>
-              <textarea id="summaryContent" class="form-input form-textarea form-textarea-lg" placeholder="Décisions prises, informations importantes, comptes-rendus..."></textarea>
-            </div>
-          </div>
-          <div class="auth-error" id="summaryFormError"></div>
-          <div class="form-actions">
-            <button class="btn-submit" id="btnAddSummary">Publier le compte-rendu</button>
-          </div>
-        </div>
-
-        <!-- Timeline -->
-        <div class="timeline-header">
-          <h2>Chronologie</h2>
-          <input type="text" id="summarySearch" class="form-input weapon-search" placeholder="🔍  Rechercher..." />
-        </div>
-
-        <div class="timeline" id="summaryTimeline">
-          <div class="timeline-empty" id="summaryEmpty">
-            <span>📋</span>
-            <p>Aucun compte-rendu publié pour l'instant.</p>
-          </div>
-        </div>
-
-        <!-- Modal édition résumé -->
-        <div class="modal-overlay" id="summaryModal">
-          <div class="modal-box modal-box-lg">
-            <div class="modal-header">
-              <h3>Modifier le compte-rendu</h3>
-              <button class="modal-close" id="summaryModalClose">✕</button>
-            </div>
-            <div class="modal-body">
-              <input type="hidden" id="summaryEditId" />
-              <div class="summary-form-grid">
-                <div class="form-group">
-                  <label class="form-label" for="summaryEditTitle">Titre</label>
-                  <input type="text" id="summaryEditTitle" class="form-input" placeholder="Titre du résumé" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="summaryEditDate">Date de l'événement</label>
-                  <input type="date" id="summaryEditDate" class="form-input" />
-                </div>
-                <div class="form-group form-group-full">
-                  <label class="form-label" for="summaryEditContent">Contenu</label>
-                  <textarea id="summaryEditContent" class="form-input form-textarea form-textarea-lg" placeholder="Contenu du résumé..."></textarea>
-                </div>
-              </div>
-              <div class="auth-error" id="summaryEditError"></div>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-cancel" id="summaryModalCancel">Annuler</button>
-              <button class="btn-submit" id="btnSaveSummary">Enregistrer</button>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- Véhicule -->
-      <section class="section" id="section-vehicule">
-        <div class="section-header">
-          <h1><span class="section-icon">🚗</span> Véhicule</h1>
-          <p class="section-desc">Inventaire et gestion du parc automobile de l'établissement.</p>
-        </div>
-
-        <!-- Stats véhicules -->
-        <div class="stats-grid">
-          <div class="stat-card stat-balance">
-            <div class="stat-label">Total véhicules</div>
-            <div class="stat-value" id="vehicleStatTotal">0</div>
-          </div>
-          <div class="stat-card stat-income">
-            <div class="stat-label">Attribués</div>
-            <div class="stat-value" id="vehicleStatAssigned">0</div>
-          </div>
-          <div class="stat-card stat-expense">
-            <div class="stat-label">Disponibles</div>
-            <div class="stat-value" id="vehicleStatFree">0</div>
-          </div>
-        </div>
-
-        <!-- Formulaire ajout véhicule -->
-        <div class="form-card">
-          <h2 class="form-title">Ajouter un véhicule</h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" for="vehicleName">Nom du véhicule</label>
-              <input type="text" id="vehicleName" class="form-input" placeholder="ex: Dodge Charger, Kawasaki Z900..." autocomplete="off" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="vehicleCategory">Catégorie</label>
-              <select id="vehicleCategory" class="form-input form-select">
-                <option value="">-- Catégorie --</option>
-                <option value="Voiture">🚗 Voiture</option>
-                <option value="4X4">🚙 4X4</option>
-                <option value="Moto">🏍️ Moto</option>
-              </select>
-            </div>
-            <div class="form-group form-group-full">
-              <label class="form-label" for="vehicleNotes">Notes</label>
-              <input type="text" id="vehicleNotes" class="form-input" placeholder="Couleur, plaque, particularités... (optionnel)" autocomplete="off" />
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-submit" id="btnAddVehicle">Ajouter le véhicule</button>
-          </div>
-        </div>
-
-        <!-- Filtres véhicules -->
-        <div class="weapons-toolbar">
-          <div class="transactions-filters">
-            <button class="filter-btn active" data-vfilter="all">Tous</button>
-            <button class="filter-btn" data-vfilter="free">Disponibles</button>
-            <button class="filter-btn" data-vfilter="assigned">Attribués</button>
-          </div>
-          <input type="text" id="vehicleSearch" class="form-input weapon-search" placeholder="🔍  Rechercher un véhicule..." />
-        </div>
-
-        <!-- Grille véhicules -->
-        <div class="weapons-grid" id="vehiclesGrid">
-          <div class="weapons-empty" id="vehiclesEmpty">
-            <span>🚗</span>
-            <p>Aucun véhicule dans l'inventaire.</p>
-          </div>
-        </div>
-
-        <!-- Modal attribution véhicule -->
-        <div class="modal-overlay" id="vehicleAssignModal">
-          <div class="modal-box">
-            <div class="modal-header">
-              <h3 id="vehicleAssignModalTitle">Attribuer le véhicule</h3>
-              <button class="modal-close" id="vehicleAssignModalClose">✕</button>
-            </div>
-            <div class="modal-body">
-              <label class="form-label" for="vehicleAssignSelect">Choisir un membre</label>
-              <select id="vehicleAssignSelect" class="form-input form-select">
-                <option value="">-- Aucun (retirer l'attribution) --</option>
-              </select>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-cancel" id="vehicleAssignCancel">Annuler</button>
-              <button class="btn-submit" id="btnConfirmVehicleAssign">Confirmer</button>
-            </div>
-          </div>
-        </div>
-
-      </section>
 
       <!-- Admin -->
       <section class="section" id="section-admin">
@@ -787,9 +589,7 @@
               <button class="filter-btn active" data-lfilter="all">Tout</button>
               <button class="filter-btn" data-lfilter="Groupe">Contacts</button>
               <button class="filter-btn" data-lfilter="Mission">Événements</button>
-              <button class="filter-btn" data-lfilter="Résumé">Comptes-rendus</button>
               <button class="filter-btn" data-lfilter="Arme">Personnel</button>
-              <button class="filter-btn" data-lfilter="Véhicule">Véhicules</button>
               <button class="filter-btn" data-lfilter="Transaction">Transactions</button>
             </div>
             <table class="admin-table" id="logsTable">
@@ -854,59 +654,6 @@
 
       </section>
 
-      <!-- Territoires -->
-      <section class="section" id="section-territoires">
-        <div class="section-header">
-          <h1><span class="section-icon">🗺️</span> Territoires</h1>
-          <p class="section-desc">Carte interactive de Los Santos — emplacements stratégiques.</p>
-        </div>
-
-        <div class="map-toolbar">
-          <div class="map-toolbar-left">
-            <span class="map-coord-display" id="mapCoordDisplay">Survolez la carte pour voir les coordonnées</span>
-          </div>
-          <div class="map-toolbar-right">
-            <button class="filter-btn" id="btnExportZones" title="Exporter mes tracés">📤 Exporter zones</button>
-            <button class="filter-btn" id="btnToggleEditor">✏️ Mode édition zones</button>
-            <!-- Les contrôles d'édition sont masqués individuellement via style="display:none"
-                 et rendus visibles par initMapEditor() quand le mode édition est activé.
-                 display:contents sur le wrapper permet d'ignorer ce div dans le layout flex. -->
-            <div id="editorControls" style="display:none; display:contents">
-              <select id="editorZoneSelect" class="form-input form-select editor-zone-select" style="display:none"></select>
-              <button class="btn-assign" id="btnStartDraw" style="display:none">▶ Tracer</button>
-              <button class="btn-cancel" id="btnClearDraw" style="display:none">✕ Effacer</button>
-              <button class="btn-submit" id="btnSaveZone" style="display:none">💾 Sauvegarder</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="map-wrapper">
-          <div id="gtaMap"></div>
-        </div>
-
-        <!-- Modal export zones -->
-        <div class="modal-overlay" id="exportZonesModal">
-          <div class="modal-box modal-box-lg">
-            <div class="modal-header">
-              <h3>📤 Exporter mes tracés</h3>
-              <button class="modal-close" id="exportZonesClose">✕</button>
-            </div>
-            <div class="modal-body">
-              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px">Sélectionne tout le texte ci-dessous (Ctrl+A) puis copie-le (Ctrl+C) et envoie-le.</p>
-              <textarea id="exportZonesData" class="form-input form-textarea-lg" readonly style="font-size:11px;font-family:monospace;height:260px"></textarea>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-submit" id="btnCopyZones">📋 Copier</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="editor-coords-panel" id="editorCoordsPanel" style="display:none">
-          <span class="editor-coords-title">Points tracés :</span>
-          <code id="editorCoordsOutput">—</code>
-        </div>
-
-      </section>
 
       <!-- Événements -->
       <section class="section" id="section-missions">
@@ -996,17 +743,12 @@
           <div class="profile-stats">
             <div class="stat-card stat-balance"><div class="stat-label">Transactions</div><div class="stat-value" id="profileTxCount">0</div></div>
             <div class="stat-card stat-income"><div class="stat-label">Affectations</div><div class="stat-value" id="profileWeaponCount">0</div></div>
-            <div class="stat-card stat-expense"><div class="stat-label">Véhicules</div><div class="stat-value" id="profileVehicleCount">0</div></div>
           </div>
         </div>
         <div class="profile-sections">
           <div class="profile-section-block">
             <h4>💼 Employés affectés</h4>
             <div id="profileWeapons" class="profile-items"></div>
-          </div>
-          <div class="profile-section-block">
-            <h4>🚗 Véhicules affectés</h4>
-            <div id="profileVehicles" class="profile-items"></div>
           </div>
           <div class="profile-section-block profile-full">
             <h4>💸 Dernières transactions</h4>
@@ -1017,8 +759,6 @@
     </div>
   </div>
 
-  <!-- Leaflet pour la carte interactive des territoires (CRS.Simple, sans projection géo). -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Chart.js pour le graphique d'évolution du solde dans la section Comptabilité. -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- Logique applicative principale — doit être chargé après Leaflet et Chart.js. -->
