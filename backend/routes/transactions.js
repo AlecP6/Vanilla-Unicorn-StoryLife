@@ -59,9 +59,6 @@ router.delete('/:id', auth, async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: 'ID invalide.' });
 
   try {
-    // Supprimer la vente liée si elle existe (cascade manuelle)
-    await pool.query('DELETE FROM sales WHERE transaction_id = $1', [id]);
-
     const result = await pool.query(
       'DELETE FROM transactions WHERE id = $1 RETURNING motif, amount',
       [id]
