@@ -610,11 +610,12 @@ async function fetchMySales() {
   } catch {}
 }
 
+const SALE_CATEGORY_ICONS = { 'Bar': '🍹', 'Danse': '💃' };
+
 function renderSaleCatalog() {
   const catalog = document.getElementById('saleCatalog');
   if (!catalog) return;
 
-  // Grouper les items par catégorie
   const categories = {};
   saleItems.forEach(item => {
     if (!categories[item.category]) categories[item.category] = [];
@@ -623,13 +624,17 @@ function renderSaleCatalog() {
 
   catalog.innerHTML = Object.entries(categories).map(([cat, items]) => `
     <div class="sale-category-block">
-      <h2 class="sale-category-title">🍹 ${escapeHtml(cat)}</h2>
+      <h2 class="sale-category-title">${SALE_CATEGORY_ICONS[cat] || '🛍️'} ${escapeHtml(cat)}</h2>
       <div class="sale-items-grid">
         ${items.map(item => `
           <div class="sale-item-card">
             <div class="sale-item-name">${escapeHtml(item.name)}</div>
-            <div class="sale-item-price">${formatAmount(item.price)} / unité</div>
-            <button class="btn-submit sale-add-btn" data-sale-item-id="${item.id}" data-sale-item-name="${escapeHtml(item.name)}" data-sale-item-price="${item.price}">
+            <div class="sale-item-price">${item.custom_price ? 'Montant libre' : `${formatAmount(item.price)} / unité`}</div>
+            <button class="btn-submit sale-add-btn"
+              data-sale-item-id="${item.id}"
+              data-sale-item-name="${escapeHtml(item.name)}"
+              data-sale-item-price="${item.price}"
+              data-sale-custom="${item.custom_price ? '1' : '0'}">
               + Ajouter
             </button>
           </div>
@@ -661,39 +666,64 @@ document.getElementById('saleCatalog')?.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-sale-item-id]');
   if (!btn) return;
   saleTarget = {
-    id:    Number(btn.dataset.saleItemId),
-    name:  btn.dataset.saleItemName,
-    price: Number(btn.dataset.saleItemPrice),
+    id:          Number(btn.dataset.saleItemId),
+    name:        btn.dataset.saleItemName,
+    price:       Number(btn.dataset.saleItemPrice),
+    customPrice: btn.dataset.saleCustom === '1',
   };
-  document.getElementById('saleItemId').value    = saleTarget.id;
+  document.getElementById('saleItemId').value         = saleTarget.id;
   document.getElementById('saleQtyTitle').textContent = `Vente — ${saleTarget.name}`;
-  document.getElementById('saleQtyInput').value  = '1';
-  document.getElementById('saleModalTotal').textContent = formatAmount(saleTarget.price);
-  document.getElementById('saleQtyError').textContent   = '';
+  document.getElementById('saleQtyInput').value       = '1';
+  document.getElementById('saleQtyError').textContent = '';
+
+  // Afficher/masquer le champ montant libre
+  const customBlock = document.getElementById('saleCustomAmountBlock');
+  const qtyBlock    = document.getElementById('saleQtyBlock');
+  if (saleTarget.customPrice) {
+    customBlock.style.display = '';
+    qtyBlock.style.display    = 'none';
+    document.getElementById('saleCustomAmountInput').value = '';
+    document.getElementById('saleModalTotal').textContent  = '$—';
+  } else {
+    customBlock.style.display = 'none';
+    qtyBlock.style.display    = '';
+    document.getElementById('saleModalTotal').textContent  = formatAmount(saleTarget.price);
+  }
   openModal('saleQtyModal');
 });
 
-// Mise à jour du total en live quand la quantité change
+// Mise à jour du total en live
 document.getElementById('saleQtyInput')?.addEventListener('input', () => {
-  if (!saleTarget) return;
+  if (!saleTarget || saleTarget.customPrice) return;
   const qty = parseInt(document.getElementById('saleQtyInput').value) || 1;
   document.getElementById('saleModalTotal').textContent = formatAmount(saleTarget.price * qty);
+});
+document.getElementById('saleCustomAmountInput')?.addEventListener('input', () => {
+  const amt = parseInt(document.getElementById('saleCustomAmountInput').value) || 0;
+  document.getElementById('saleModalTotal').textContent = amt > 0 ? formatAmount(amt) : '$—';
 });
 
 // Confirmer la vente
 document.getElementById('btnConfirmSale')?.addEventListener('click', async () => {
   if (!saleTarget) return;
-  const qty = parseInt(document.getElementById('saleQtyInput').value) || 1;
   const err = document.getElementById('saleQtyError');
   err.textContent = '';
-  if (qty < 1) { err.textContent = 'Quantité invalide.'; return; }
+
+  let qty = 1, custom_amount = null;
+  if (saleTarget.customPrice) {
+    custom_amount = parseInt(document.getElementById('saleCustomAmountInput').value);
+    if (!custom_amount || custom_amount <= 0) { err.textContent = 'Entrez un montant valide.'; return; }
+  } else {
+    qty = parseInt(document.getElementById('saleQtyInput').value) || 1;
+    if (qty < 1) { err.textContent = 'Quantité invalide.'; return; }
+  }
 
   const btn = document.getElementById('btnConfirmSale');
   btn.disabled = true; btn.textContent = 'Enregistrement...';
   try {
     const res  = await fetch(`${API}/sales`, {
       method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ item_id: saleTarget.id, quantity: qty }),
+      body: JSON.stringify({ item_id: saleTarget.id, quantity: qty, custom_amount }),
     });
     const data = await res.json();
     if (!res.ok) { err.textContent = data.error || 'Erreur.'; return; }

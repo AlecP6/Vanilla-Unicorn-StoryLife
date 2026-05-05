@@ -379,12 +379,16 @@
             </div>
             <div class="modal-body">
               <input type="hidden" id="saleItemId" />
-              <div class="form-group">
+              <div class="form-group" id="saleQtyBlock">
                 <label class="form-label" for="saleQtyInput">Quantité</label>
                 <input type="number" id="saleQtyInput" class="form-input" value="1" min="1" max="99" />
               </div>
+              <div class="form-group" id="saleCustomAmountBlock" style="display:none">
+                <label class="form-label" for="saleCustomAmountInput">Montant ($)</label>
+                <input type="number" id="saleCustomAmountInput" class="form-input" placeholder="ex: 250" min="1" />
+              </div>
               <div class="sale-modal-total">
-                Total : <span id="saleModalTotal">$500</span>
+                Total : <span id="saleModalTotal">$—</span>
               </div>
               <div class="auth-error" id="saleQtyError"></div>
             </div>

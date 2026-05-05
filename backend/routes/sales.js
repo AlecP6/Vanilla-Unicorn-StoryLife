@@ -31,21 +31,31 @@ router.get('/my', auth, async (req, res) => {
 
 // POST /api/sales — enregistrer une vente + créer la transaction comptable
 router.post('/', auth, async (req, res) => {
-  const { item_id, quantity } = req.body;
+  const { item_id, quantity, custom_amount } = req.body;
   const qty = parseInt(quantity) || 1;
   if (!item_id || qty < 1) return res.status(400).json({ error: 'Données invalides.' });
 
   try {
     const itemRes = await pool.query('SELECT * FROM sale_items WHERE id = $1', [item_id]);
     if (!itemRes.rows.length) return res.status(404).json({ error: 'Article introuvable.' });
-    const item  = itemRes.rows[0];
-    const total = item.price * qty;
+    const item = itemRes.rows[0];
+
+    let unitPrice, total;
+    if (item.custom_price) {
+      const amt = parseInt(custom_amount);
+      if (!amt || amt <= 0) return res.status(400).json({ error: 'Montant requis pour cet article.' });
+      unitPrice = amt;
+      total     = amt * qty;
+    } else {
+      unitPrice = item.price;
+      total     = item.price * qty;
+    }
 
     // Enregistrer la vente
     const { rows } = await pool.query(`
       INSERT INTO sales (user_id, item_id, quantity, unit_price, total)
       VALUES ($1, $2, $3, $4, $5) RETURNING *
-    `, [req.user.id, item_id, qty, item.price, total]);
+    `, [req.user.id, item_id, qty, unitPrice, total]);
 
     // Créer automatiquement une transaction comptable (entrée)
     await pool.query(`
