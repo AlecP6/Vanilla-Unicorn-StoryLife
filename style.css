@@ -2502,9 +2502,9 @@ body {
   border-radius: 12px;
 }
 
+.status-badge-a_venir  { background: rgba(212,175,55,0.15);  color: var(--gold); }
 .status-badge-en_cours { background: rgba(245,166,35,0.15);  color: #f5a623; }
 .status-badge-termine  { background: rgba(76,175,130,0.15);  color: #4caf82; }
-.status-badge-echoue   { background: rgba(229,115,115,0.15); color: #e57373; }
 
 .mission-card-desc {
   padding: 0 16px 10px;
@@ -2512,6 +2512,13 @@ body {
   color: var(--text-secondary);
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+.mission-card-date {
+  padding: 0 16px 8px;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 600;
 }
 
 .mission-card-members {

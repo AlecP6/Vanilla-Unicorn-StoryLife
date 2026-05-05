@@ -19,13 +19,13 @@ router.get('/', auth, async (req, res) => {
 
 // POST /api/missions
 router.post('/', auth, async (req, res) => {
-  const { title, description, priority, assigned_ids } = req.body;
+  const { title, description, priority, assigned_ids, event_date } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'Le titre est requis.' });
   try {
     const { rows } = await pool.query(`
-      INSERT INTO missions (title, description, priority, assigned_ids, created_by)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *
-    `, [title.trim(), description?.trim() || '', priority || 'normale', assigned_ids || '', req.user.id]);
+      INSERT INTO missions (title, description, priority, assigned_ids, created_by, status, event_date)
+      VALUES ($1, $2, $3, $4, $5, 'a_venir', $6) RETURNING *
+    `, [title.trim(), description?.trim() || '', priority || 'normale', assigned_ids || '', req.user.id, event_date || null]);
     const row = rows[0];
     row.created_by_name = req.user.rp_name;
     res.status(201).json(row);
@@ -37,8 +37,8 @@ router.post('/', auth, async (req, res) => {
 // PATCH /api/missions/:id/status
 router.patch('/:id/status', auth, async (req, res) => {
   const { status } = req.body;
-  const valid = ['en_cours', 'termine', 'echoue'];
-  const labels = { en_cours: 'En cours', termine: 'Terminée', echoue: 'Échouée' };
+  const valid = ['a_venir', 'en_cours', 'termine'];
+  const labels = { a_venir: 'À venir', en_cours: 'En cours', termine: 'Terminé' };
   if (!valid.includes(status)) return res.status(400).json({ error: 'Statut invalide.' });
   try {
     const { rows } = await pool.query(
@@ -54,13 +54,13 @@ router.patch('/:id/status', auth, async (req, res) => {
 
 // PUT /api/missions/:id
 router.put('/:id', auth, async (req, res) => {
-  const { title, description, priority, assigned_ids } = req.body;
+  const { title, description, priority, assigned_ids, event_date } = req.body;
   if (!title?.trim()) return res.status(400).json({ error: 'Le titre est requis.' });
   try {
     const { rows } = await pool.query(`
-      UPDATE missions SET title=$1, description=$2, priority=$3, assigned_ids=$4, updated_at=NOW()
-      WHERE id=$5 RETURNING *
-    `, [title.trim(), description?.trim() || '', priority || 'normale', assigned_ids || '', req.params.id]);
+      UPDATE missions SET title=$1, description=$2, priority=$3, assigned_ids=$4, event_date=$5, updated_at=NOW()
+      WHERE id=$6 RETURNING *
+    `, [title.trim(), description?.trim() || '', priority || 'normale', assigned_ids || '', event_date || null, req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Mission introuvable.' });
     res.json(rows[0]);
 

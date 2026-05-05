@@ -646,9 +646,9 @@
         <div class="groups-toolbar">
           <div class="transactions-filters">
             <button class="filter-btn active" data-mfilter="all">Tous</button>
+            <button class="filter-btn" data-mfilter="a_venir">À venir</button>
             <button class="filter-btn" data-mfilter="en_cours">En cours</button>
             <button class="filter-btn" data-mfilter="termine">Terminés</button>
-            <button class="filter-btn" data-mfilter="echoue">Annulés</button>
           </div>
           <button class="btn-submit" id="btnOpenAddMission">+ Nouvel événement</button>
         </div>
@@ -673,6 +673,10 @@
                 <div class="form-group">
                   <label class="form-label" for="missionTitle">Titre de l'événement</label>
                   <input type="text" id="missionTitle" class="form-input" placeholder="ex: VIP Night — Vendredi" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="missionDate">📅 Date de l'événement</label>
+                  <input type="date" id="missionDate" class="form-input" />
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="missionPriority">Type d'événement</label>

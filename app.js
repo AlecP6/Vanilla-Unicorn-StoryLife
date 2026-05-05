@@ -1834,7 +1834,7 @@ let missions      = [];
 let missionFilter = 'all';   // 'all' | 'en_cours' | 'termine' | 'echoue'
 
 // Labels d'affichage pour les statuts et priorités (utilisés dans les cartes et les selects).
-const MISSION_STATUS_LABELS = { en_cours: '⏳ En cours', termine: '✅ Terminé', echoue: '🚫 Annulé' };
+const MISSION_STATUS_LABELS = { a_venir: '🗓️ À venir', en_cours: '⏳ En cours', termine: '✅ Terminé' };
 const MISSION_PRIORITY_LABELS = { basse: '🟢 Basse', normale: '🟡 Normale', haute: '🔴 Haute' };
 
 async function fetchMissions() {
@@ -1896,6 +1896,11 @@ function renderMissions() {
   list.forEach(m => {
     const card = document.createElement('div');
     card.className = `mission-card status-${m.status}`;
+
+    const dateStr = m.event_date
+      ? new Date(m.event_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : null;
+
     card.innerHTML = `
       <div class="mission-card-header">
         <div class="mission-card-title-row">
@@ -1903,22 +1908,23 @@ function renderMissions() {
           <span class="mission-card-title">${escapeHtml(m.title)}</span>
         </div>
         <div class="mission-card-badges">
-          <span class="mission-status-badge status-badge-${m.status}">${MISSION_STATUS_LABELS[m.status]}</span>
+          <span class="mission-status-badge status-badge-${m.status}">${MISSION_STATUS_LABELS[m.status] || m.status}</span>
           ${currentUser?.id === m.created_by ? `
             <button class="btn-edit" data-mission-edit="${m.id}">✏️</button>
             <button class="btn-delete" data-mission-del="${m.id}">✕</button>
           ` : ''}
         </div>
       </div>
+      ${dateStr ? `<div class="mission-card-date">📅 ${dateStr}</div>` : ''}
       ${m.description ? `<div class="mission-card-desc">${escapeHtml(m.description)}</div>` : ''}
-      ${m.assigned_ids ? `<div class="mission-card-members">👥 ${escapeHtml(getMemberNames(m.assigned_ids))}</div>` : ''}
+      ${m.assigned_ids ? `<div class="mission-card-members">👤 ${escapeHtml(getMemberNames(m.assigned_ids))}</div>` : ''}
       <div class="mission-card-footer">
         <span>Par ${escapeHtml(m.created_by_name || '—')}</span>
         <div class="mission-status-controls">
           <select class="mission-status-select form-input form-select" data-mission-status="${m.id}">
-            <option value="en_cours"  ${m.status==='en_cours'  ? 'selected':''}>⏳ En cours</option>
-            <option value="termine"   ${m.status==='termine'   ? 'selected':''}>✅ Terminé</option>
-            <option value="echoue"    ${m.status==='echoue'    ? 'selected':''}>🚫 Annulé</option>
+            <option value="a_venir"  ${m.status==='a_venir'  ? 'selected':''}>🗓️ À venir</option>
+            <option value="en_cours" ${m.status==='en_cours' ? 'selected':''}>⏳ En cours</option>
+            <option value="termine"  ${m.status==='termine'  ? 'selected':''}>✅ Terminé</option>
           </select>
         </div>
       </div>`;
@@ -1939,10 +1945,11 @@ document.querySelectorAll('[data-mfilter]').forEach(btn => {
 
 // Ouvrir modal ajout
 document.getElementById('btnOpenAddMission')?.addEventListener('click', () => {
-  document.getElementById('missionModalTitle').textContent = 'Nouvelle mission';
-  document.getElementById('missionEditId').value  = '';
-  document.getElementById('missionTitle').value   = '';
-  document.getElementById('missionDesc').value    = '';
+  document.getElementById('missionModalTitle').textContent = 'Nouvel événement';
+  document.getElementById('missionEditId').value   = '';
+  document.getElementById('missionTitle').value    = '';
+  document.getElementById('missionDate').value     = '';
+  document.getElementById('missionDesc').value     = '';
   document.getElementById('missionPriority').value = 'normale';
   document.getElementById('missionError').textContent = '';
   buildMissionMembersSelector();
@@ -1958,9 +1965,10 @@ document.getElementById('missionsGrid')?.addEventListener('click', async (e) => 
   if (editBtn) {
     const m = missions.find(m => m.id === Number(editBtn.dataset.missionEdit));
     if (!m) return;
-    document.getElementById('missionModalTitle').textContent = 'Modifier la mission';
+    document.getElementById('missionModalTitle').textContent = "Modifier l'événement";
     document.getElementById('missionEditId').value   = m.id;
     document.getElementById('missionTitle').value    = m.title;
+    document.getElementById('missionDate').value     = m.event_date ? m.event_date.slice(0, 10) : '';
     document.getElementById('missionDesc').value     = m.description || '';
     document.getElementById('missionPriority').value = m.priority;
     document.getElementById('missionError').textContent = '';
@@ -1993,14 +2001,15 @@ document.getElementById('missionsGrid')?.addEventListener('change', async (e) =>
   } catch {}
 });
 
-// Sauvegarder mission
+// Sauvegarder événement
 document.getElementById('btnSaveMission')?.addEventListener('click', async () => {
-  const id          = document.getElementById('missionEditId').value;
-  const title       = document.getElementById('missionTitle').value.trim();
-  const description = document.getElementById('missionDesc').value.trim();
-  const priority    = document.getElementById('missionPriority').value;
+  const id           = document.getElementById('missionEditId').value;
+  const title        = document.getElementById('missionTitle').value.trim();
+  const event_date   = document.getElementById('missionDate').value || null;
+  const description  = document.getElementById('missionDesc').value.trim();
+  const priority     = document.getElementById('missionPriority').value;
   const assigned_ids = getSelectedMissionMembers();
-  const errorEl     = document.getElementById('missionError');
+  const errorEl      = document.getElementById('missionError');
   errorEl.textContent = '';
   if (!title) { errorEl.textContent = 'Le titre est requis.'; return; }
 
@@ -2011,7 +2020,7 @@ document.getElementById('btnSaveMission')?.addEventListener('click', async () =>
   btn.disabled = true; btn.textContent = 'Enregistrement...';
 
   try {
-    const res  = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ title, description, priority, assigned_ids }) });
+    const res  = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify({ title, event_date, description, priority, assigned_ids }) });
     const data = await res.json();
     if (!res.ok) { errorEl.textContent = data.error || 'Erreur.'; return; }
     if (isEdit) { const idx = missions.findIndex(m => m.id === Number(id)); if (idx !== -1) missions[idx] = data; }
