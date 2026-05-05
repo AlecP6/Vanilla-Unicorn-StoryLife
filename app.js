@@ -249,8 +249,8 @@ function onUserLoggedIn(user) {
   const navGroupAdmin = document.getElementById('navGroupAdmin');
   if (navGroupAdmin) navGroupAdmin.style.display = isDirection(user) ? '' : 'none';
 
-  // Section par défaut : dashboard pour la direction, comptabilite pour les employés.
-  switchSection(isDirection(user) ? 'dashboard' : 'comptabilite');
+  // Section par défaut : dashboard pour la direction, contacts pour les employés.
+  switchSection(isDirection(user) ? 'dashboard' : 'groupes');
 }
 
 // Logout
