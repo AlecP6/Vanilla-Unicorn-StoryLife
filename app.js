@@ -610,7 +610,7 @@ async function fetchMySales() {
   } catch {}
 }
 
-const SALE_CATEGORY_ICONS = { 'Bar': '🍹', 'Danse': '💃' };
+const SALE_CATEGORY_ICONS = { 'Bar': '🍹', 'Danse': '💃', 'Entrée': '🎟️' };
 
 function renderSaleCatalog() {
   const catalog = document.getElementById('saleCatalog');
