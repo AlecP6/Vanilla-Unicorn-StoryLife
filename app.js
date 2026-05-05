@@ -234,16 +234,23 @@ function loginUser(token, user) {
   onUserLoggedIn(user);
 }
 
+// Retourne true si l'utilisateur a accès à l'espace direction (admin ou manager).
+function isDirection(user) {
+  return user.is_admin || user.poste === 'Manager';
+}
+
 // Appelé après une connexion réussie : met à jour l'avatar, le nom RP en topbar,
-// affiche le lien Admin uniquement aux admins et charge le dashboard.
+// affiche le groupe de navigation direction uniquement aux admins/managers.
 function onUserLoggedIn(user) {
-  // Génère les initiales à partir du nom RP (ex : "Jean Dupont" → "JD")
   const initials = user.rp_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userRpName').textContent = user.rp_name;
-  const adminNav = document.getElementById('adminNavItem');
-  if (adminNav) adminNav.style.display = user.is_admin ? '' : 'none';
-  switchSection('dashboard');
+
+  const navGroupAdmin = document.getElementById('navGroupAdmin');
+  if (navGroupAdmin) navGroupAdmin.style.display = isDirection(user) ? '' : 'none';
+
+  // Section par défaut : dashboard pour la direction, comptabilite pour les employés.
+  switchSection(isDirection(user) ? 'dashboard' : 'comptabilite');
 }
 
 // Logout

@@ -127,15 +127,11 @@
     </div>
 
     <nav class="sidebar-nav">
-      <ul>
+      <!-- Section employés (visible par tous) -->
+      <ul class="nav-group nav-group-employee">
+        <li class="nav-group-label">Espace employé</li>
         <li>
-          <a href="#" class="nav-item active" data-section="dashboard">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Dashboard</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" class="nav-item" data-section="comptabilite">
+          <a href="#" class="nav-item active" data-section="comptabilite">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Comptabilité</span>
           </a>
@@ -152,8 +148,18 @@
             <span class="nav-label">Événements</span>
           </a>
         </li>
-        <!-- Lien Admin masqué par défaut ; affiché uniquement pour les utilisateurs is_admin=true (géré dans onUserLoggedIn). -->
-        <li id="adminNavItem" style="display:none">
+      </ul>
+
+      <!-- Section direction (masquée par défaut, visible pour admin + manager) -->
+      <ul class="nav-group nav-group-admin" id="navGroupAdmin" style="display:none">
+        <li class="nav-group-label">Direction</li>
+        <li>
+          <a href="#" class="nav-item" data-section="dashboard">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
           <a href="#" class="nav-item" data-section="admin">
             <span class="nav-icon">🛡️</span>
             <span class="nav-label">Admin</span>

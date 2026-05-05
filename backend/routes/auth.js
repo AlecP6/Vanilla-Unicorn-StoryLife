@@ -67,7 +67,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT * FROM users WHERE LOWER(username) = LOWER($1)',
+      'SELECT id, username, rp_name, password_hash, is_admin, poste FROM users WHERE LOWER(username) = LOWER($1)',
       [username]
     );
     if (result.rows.length === 0) {
@@ -81,12 +81,12 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username, rp_name: user.rp_name, is_admin: user.is_admin },
+      { id: user.id, username: user.username, rp_name: user.rp_name, is_admin: user.is_admin, poste: user.poste },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.json({ token, user: { id: user.id, username: user.username, rp_name: user.rp_name, is_admin: user.is_admin } });
+    res.json({ token, user: { id: user.id, username: user.username, rp_name: user.rp_name, is_admin: user.is_admin, poste: user.poste } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Erreur serveur.' });
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', require('../middleware/authMiddleware'), async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, username, rp_name, created_at FROM users WHERE id = $1',
+      'SELECT id, username, rp_name, poste, is_admin, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Utilisateur introuvable.' });

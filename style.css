@@ -253,6 +253,9 @@ body {
   flex: 1;
   padding: 12px 10px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .sidebar-nav ul {
@@ -260,6 +263,22 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.nav-group-admin {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.nav-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 14px 6px;
+  pointer-events: none;
 }
 
 .nav-item {
