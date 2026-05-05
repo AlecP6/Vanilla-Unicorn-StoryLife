@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vanilla Unicorn — Gestion</title>
+  <link rel="icon" type="image/png" href="image.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== LOADING SCREEN ===== -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-inner">
+      <div class="loading-logo">✦ VANILLA UNICORN ✦</div>
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST CONTAINER ===== -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ===== CONFIRM MODAL ===== -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-confirm-title">⚠️ Confirmation</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage" class="confirm-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btnConfirmNo">Annuler</button>
+        <button class="btn-danger" id="btnConfirmYes">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== AUTH OVERLAY ===== -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <span>🦄</span>
+        <span class="auth-logo-text">Vanilla Unicorn</span>
+      </div>
+
+      <!-- Connexion -->
+      <div class="auth-panel active" id="panelLogin">
+        <h2 class="auth-title">Connexion</h2>
+        <p class="auth-sub">Accès réservé au personnel de l'établissement.</p>
+
+        <div class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label" for="loginId">Identifiant</label>
+            <input type="text" id="loginId" class="auth-input" placeholder="Votre identifiant" autocomplete="off" />
+          </div>
+          <div class="auth-field">
+            <label class="auth-label" for="loginPwd">Mot de passe</label>
+            <input type="password" id="loginPwd" class="auth-input" placeholder="••••••••" />
+          </div>
+          <div class="auth-error" id="loginError"></div>
+          <button class="auth-btn" id="btnLogin">Se connecter</button>
+        </div>
+
+        <p class="auth-switch">Pas encore de compte ? <a href="#" id="goRegister">Créer un compte</a></p>
+      </div>
+
+      <!-- Inscription -->
+      <div class="auth-panel" id="panelRegister">
+        <h2 class="auth-title">Créer un compte</h2>
+        <p class="auth-sub">Renseignez vos informations d'employé.</p>
+
+        <div class="auth-form">
+          <div class="auth-field">
+            <label class="auth-label" for="regId">Identifiant</label>
+            <input type="text" id="regId" class="auth-input" placeholder="Choisir un identifiant" autocomplete="off" />
+          </div>
+          <div class="auth-field">
+            <label class="auth-label" for="regRpName">Nom RP</label>
+            <input type="text" id="regRpName" class="auth-input" placeholder="Prénom Nom (en jeu)" autocomplete="off" />
+          </div>
+          <div class="auth-field">
+            <label class="auth-label" for="regPwd">Mot de passe</label>
+            <input type="password" id="regPwd" class="auth-input" placeholder="••••••••" />
+          </div>
+          <div class="auth-field">
+            <label class="auth-label" for="regPwdConfirm">Confirmer le mot de passe</label>
+            <input type="password" id="regPwdConfirm" class="auth-input" placeholder="••••••••" />
+          </div>
+          <div class="auth-field">
+            <label class="auth-label" for="regInviteCode">Code d'invitation <span class="auth-label-required">(fourni par un admin)</span></label>
+            <input type="text" id="regInviteCode" class="auth-input auth-input-code" placeholder="XXXXXX" maxlength="6" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="auth-error" id="registerError"></div>
+          <button class="auth-btn" id="btnRegister">Créer le compte</button>
+        </div>
+
+        <p class="auth-switch">Déjà un compte ? <a href="#" id="goLogin">Se connecter</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== APP ===== -->
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-text">✦ VANILLA UNICORN</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul>
+        <li>
+          <a href="#" class="nav-item active" data-section="dashboard">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="comptabilite">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Comptabilité</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="armement">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Personnel</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="groupes">
+            <span class="nav-icon">🤝</span>
+            <span class="nav-label">Contacts</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="resume-tables">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Comptes-rendus</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="vehicule">
+            <span class="nav-icon">🚗</span>
+            <span class="nav-label">Véhicule</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="territoires">
+            <span class="nav-icon">🗺️</span>
+            <span class="nav-label">Territoires</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-section="missions">
+            <span class="nav-icon">🎭</span>
+            <span class="nav-label">Événements</span>
+          </a>
+        </li>
+        <!-- Lien Admin masqué par défaut ; affiché uniquement pour les utilisateurs is_admin=true (géré dans onUserLoggedIn). -->
+        <li id="adminNavItem" style="display:none">
+          <a href="#" class="nav-item" data-section="admin">
+            <span class="nav-icon">🛡️</span>
+            <span class="nav-label">Admin</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <img src="image.png" alt="Vanilla Unicorn" class="sidebar-img" />
+      <span class="version">v1.1.0</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Comptabilité</div>
+      <div class="topbar-right">
+        <span class="date-display" id="dateDisplay"></span>
+        <div class="user-chip" id="userChip">
+          <span class="user-chip-avatar" id="userAvatar"></span>
+          <span class="user-chip-name" id="userRpName"></span>
+        </div>
+        <button class="btn-logout" id="btnLogout" title="Se déconnecter">⏻</button>
+      </div>
+    </header>
+
+    <!-- Content area -->
+    <main class="content" id="mainContent">
+
+      <!-- Dashboard -->
+      <section class="section active" id="section-dashboard">
+        <div class="section-header">
+          <h1><span class="section-icon">🏠</span> Dashboard</h1>
+          <p class="section-desc">Vue d'ensemble de l'établissement.</p>
+        </div>
+        <div class="stats-grid" id="dashStats">
+          <div class="stat-card stat-balance">
+            <div class="stat-label">Solde total</div>
+            <div class="stat-value" id="dashBalance">$0</div>
+          </div>
+          <div class="stat-card stat-income">
+            <div class="stat-label">Personnel actif</div>
+            <div class="stat-value" id="dashWeapons">0</div>
+          </div>
+          <div class="stat-card stat-expense">
+            <div class="stat-label">Véhicules en service</div>
+            <div class="stat-value" id="dashVehicles">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Contacts / Partenaires</div>
+            <div class="stat-value" id="dashGroups">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Employés</div>
+            <div class="stat-value" id="dashMembers">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Événements en cours</div>
+            <div class="stat-value" id="dashMissions">0</div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <!-- Dernières transactions -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>💸 Dernières transactions</h2>
+            </div>
+            <div id="dashRecentTx" class="dash-list"></div>
+          </div>
+          <!-- Dernier résumé -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>📋 Dernier compte-rendu</h2>
+            </div>
+            <div id="dashLastSummary" class="dash-summary-preview"></div>
+          </div>
+          <!-- Missions actives -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>🎭 Événements à venir</h2>
+            </div>
+            <div id="dashMissionsList" class="dash-list"></div>
+          </div>
+          <!-- Membres -->
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h2>👥 Membres</h2>
+            </div>
+            <div id="dashMembersList" class="dash-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comptabilité -->
+      <section class="section" id="section-comptabilite">
+        <div class="section-header">
+          <h1><span class="section-icon">📊</span> Comptabilité</h1>
+          <p class="section-desc">Gestion des finances et transactions de l'établissement.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card stat-balance">
+            <div class="stat-label">Solde total</div>
+            <div class="stat-value" id="statBalance">$0</div>
+          </div>
+          <div class="stat-card stat-income">
+            <div class="stat-label">Total entrées</div>
+            <div class="stat-value" id="statIncome">$0</div>
+          </div>
+          <div class="stat-card stat-expense">
+            <div class="stat-label">Total sorties</div>
+            <div class="stat-value" id="statExpense">$0</div>
+          </div>
+          <div class="stat-card stat-count">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value" id="statCount">0</div>
+          </div>
+        </div>
+
+        <!-- Formulaire d'ajout -->
+        <div class="form-card" id="transactionForm">
+          <h2 class="form-title">Nouvelle transaction</h2>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label class="form-label">Type</label>
+              <div class="type-toggle">
+                <button class="type-btn active" id="btnEntree" data-type="entree">
+                  <span>↑</span> Entrée
+                </button>
+                <button class="type-btn" id="btnSortie" data-type="sortie">
+                  <span>↓</span> Sortie
+                </button>
+              </div>
+              <!-- Champ caché servant de valeur d'état pour le type sélectionné ('entree' ou 'sortie').
+                   Mis à jour via les boutons Toggle dans app.js (btnEntree / btnSortie). -->
+              <input type="hidden" id="transactionType" value="entree" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="transactionAmount">Montant ($)</label>
+              <div class="input-prefix-wrap">
+                <span class="input-prefix">$</span>
+                <input type="number" id="transactionAmount" class="form-input with-prefix" placeholder="0" min="1" step="1" />
+              </div>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label class="form-label" for="transactionMotif">Motif</label>
+              <input type="text" id="transactionMotif" class="form-input" placeholder="Raison de la transaction..." autocomplete="off" />
+            </div>
+
+          </div>
+          <div class="form-actions">
+            <button class="btn-submit" id="btnAddTransaction">Ajouter la transaction</button>
+          </div>
+        </div>
+
+        <!-- Graphique Chart.js — le <canvas> est géré par renderBalanceChart() dans app.js.
+             Chart.js est chargé en bas de page via CDN avant app.js. -->
+        <div class="charts-row">
+          <div class="chart-card" style="max-width:100%">
+            <h2 class="form-title">Évolution du solde</h2>
+            <canvas id="chartBalance"></canvas>
+          </div>
+        </div>
+
+        <!-- Historique -->
+        <div class="transactions-card">
+          <div class="transactions-header">
+            <h2>Historique des transactions</h2>
+            <div class="transactions-filters">
+              <button class="filter-btn active" data-filter="all">Tout</button>
+              <button class="filter-btn" data-filter="entree">Entrées</button>
+              <button class="filter-btn" data-filter="sortie">Sorties</button>
+            </div>
+          </div>
+
+          <div class="transactions-table-wrap">
+            <table class="transactions-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Membre</th>
+                  <th>Motif</th>
+                  <th>Montant</th>
+                  <th>Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="transactionsList">
+                <tr class="empty-row" id="emptyTransactions">
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <span>💸</span>
+                      <p>Aucune transaction pour l'instant.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Personnel -->
+      <section class="section" id="section-armement">
+        <div class="section-header">
+          <h1><span class="section-icon">👤</span> Personnel</h1>
+          <p class="section-desc">Gestion et affectation du personnel de l'établissement.</p>
+        </div>
+
+        <!-- Stats personnel -->
+        <div class="stats-grid">
+          <div class="stat-card stat-balance">
+            <div class="stat-label">Total staff</div>
+            <div class="stat-value" id="weaponStatTotal">0</div>
+          </div>
+          <div class="stat-card stat-income">
+            <div class="stat-label">En service</div>
+            <div class="stat-value" id="weaponStatAssigned">0</div>
+          </div>
+          <div class="stat-card stat-expense">
+            <div class="stat-label">Disponibles</div>
+            <div class="stat-value" id="weaponStatFree">0</div>
+          </div>
+        </div>
+
+        <!-- Formulaire ajout employé -->
+        <div class="form-card">
+          <h2 class="form-title">Ajouter un employé</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="weaponName">Prénom Nom (RP)</label>
+              <input type="text" id="weaponName" class="form-input" placeholder="ex: Jessica Stone" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weaponCategory">Poste</label>
+              <select id="weaponCategory" class="form-input form-select">
+                <option value="">-- Poste --</option>
+                <option value="Danseuse">Danseuse</option>
+                <option value="Agent de sécurité">Agent de sécurité</option>
+                <option value="Barman/Barmaid">Barman / Barmaid</option>
+                <option value="DJ">DJ</option>
+                <option value="Manager">Manager</option>
+                <option value="Serveuse/Serveur">Serveuse / Serveur</option>
+              </select>
+            </div>
+            <div class="form-group form-group-full">
+              <label class="form-label" for="weaponNotes">Notes</label>
+              <input type="text" id="weaponNotes" class="form-input" placeholder="Disponibilités, contrat, particularités... (optionnel)" autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-submit" id="btnAddWeapon">Ajouter l'employé</button>
+          </div>
+        </div>
+
+        <!-- Filtres personnel -->
+        <div class="weapons-toolbar">
+          <div class="transactions-filters">
+            <button class="filter-btn active" data-wfilter="all">Tout le staff</button>
+            <button class="filter-btn" data-wfilter="free">Disponibles</button>
+            <button class="filter-btn" data-wfilter="assigned">En service</button>
+          </div>
+          <input type="text" id="weaponSearch" class="form-input weapon-search" placeholder="🔍  Rechercher un employé..." />
+        </div>
+
+        <!-- Grille personnel -->
+        <div class="weapons-grid" id="weaponsGrid">
+          <div class="weapons-empty" id="weaponsEmpty">
+            <span>👤</span>
+            <p>Aucun employé enregistré.</p>
+          </div>
+        </div>
+
+        <!-- Modal affectation -->
+        <div class="modal-overlay" id="assignModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3 id="assignModalTitle">Affecter l'employé</h3>
+              <button class="modal-close" id="assignModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label" for="assignSelect">Affecter à un manager</label>
+              <select id="assignSelect" class="form-input form-select">
+                <option value="">-- Non affecté --</option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="assignModalCancel">Annuler</button>
+              <button class="btn-submit" id="btnConfirmAssign">Confirmer</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Contacts -->
+      <section class="section" id="section-groupes">
+        <div class="section-header">
+          <h1><span class="section-icon">🤝</span> Contacts</h1>
+          <p class="section-desc">Répertoire des contacts VIP et partenaires commerciaux.</p>
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="groups-toolbar">
+          <input type="text" id="groupSearch" class="form-input weapon-search" placeholder="🔍  Rechercher un contact..." />
+          <button class="btn-submit" id="btnOpenAddGroup">+ Nouveau contact</button>
+        </div>
+
+        <!-- Grille de contacts -->
+        <div class="groups-grid" id="groupsGrid">
+          <div class="groups-empty" id="groupsEmpty">
+            <span>🤝</span>
+            <p>Aucun contact enregistré pour l'instant.</p>
+          </div>
+        </div>
+
+        <!-- Modal ajout / édition contact -->
+        <div class="modal-overlay" id="groupModal">
+          <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+              <h3 id="groupModalTitle">Nouveau contact</h3>
+              <button class="modal-close" id="groupModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="groupEditId" value="" />
+
+              <div class="group-form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="groupName">Nom / Entreprise</label>
+                  <input type="text" id="groupName" class="form-input" placeholder="ex: Michael De Santa, Maze Bank..." autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupColor">🎨 Couleur sur la carte</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="groupColor" class="color-picker" value="#d4007a" />
+                    <span class="color-picker-label" id="groupColorLabel">#d4007a</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupResidence">📍 Lieu de rendez-vous habituel</label>
+                  <input type="text" id="groupResidence" class="form-input" placeholder="ex: Vanilla Unicorn, Maze Tower..." autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupTerritory">💡 Intérêts / Services recherchés</label>
+                  <input type="text" id="groupTerritory" class="form-input" placeholder="ex: Privatisation, VIP Night, Partenariat..." autocomplete="off" />
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label">🗺️ Zones associées <span class="form-label-hint">(cliquez pour sélectionner)</span></label>
+                  <div class="zone-selector" id="zoneSelector"></div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupPhone">📞 Numéro de téléphone</label>
+                  <input type="text" id="groupPhone" class="form-input" placeholder="ex: 555-0199" autocomplete="off" inputmode="numeric" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupBusiness">💎 Niveau VIP</label>
+                  <input type="text" id="groupBusiness" class="form-input" placeholder="ex: VIP Gold, VIP Platine, Partenaire..." autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="groupCompany">🏢 Entreprise / Affiliation</label>
+                  <input type="text" id="groupCompany" class="form-input" placeholder="ex: Maze Bank, Merryweather..." autocomplete="off" />
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label" for="groupNotes">📝 Informations complémentaires</label>
+                  <textarea id="groupNotes" class="form-input form-textarea" placeholder="Préférences, historique, accords conclus..."></textarea>
+                </div>
+              </div>
+
+              <div class="auth-error" id="groupError"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="groupModalCancel">Annuler</button>
+              <button class="btn-submit" id="btnSaveGroup">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Comptes-rendus -->
+      <section class="section" id="section-resume-tables">
+        <div class="section-header">
+          <h1><span class="section-icon">📋</span> Comptes-rendus</h1>
+          <p class="section-desc">Historique des réunions et décisions de direction.</p>
+        </div>
+
+        <!-- Formulaire ajout compte-rendu -->
+        <div class="form-card" id="summaryFormCard">
+          <h2 class="form-title">Nouveau compte-rendu</h2>
+          <div class="summary-form-grid">
+            <div class="form-group">
+              <label class="form-label" for="summaryTitle">Titre</label>
+              <input type="text" id="summaryTitle" class="form-input" placeholder="ex: Réunion de direction, Décision RH, Bilan hebdo..." autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="summaryDate">Date de l'événement</label>
+              <input type="date" id="summaryDate" class="form-input" />
+            </div>
+            <div class="form-group form-group-full">
+              <label class="form-label" for="summaryContent">Contenu</label>
+              <textarea id="summaryContent" class="form-input form-textarea form-textarea-lg" placeholder="Décisions prises, informations importantes, comptes-rendus..."></textarea>
+            </div>
+          </div>
+          <div class="auth-error" id="summaryFormError"></div>
+          <div class="form-actions">
+            <button class="btn-submit" id="btnAddSummary">Publier le compte-rendu</button>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-header">
+          <h2>Chronologie</h2>
+          <input type="text" id="summarySearch" class="form-input weapon-search" placeholder="🔍  Rechercher..." />
+        </div>
+
+        <div class="timeline" id="summaryTimeline">
+          <div class="timeline-empty" id="summaryEmpty">
+            <span>📋</span>
+            <p>Aucun compte-rendu publié pour l'instant.</p>
+          </div>
+        </div>
+
+        <!-- Modal édition résumé -->
+        <div class="modal-overlay" id="summaryModal">
+          <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+              <h3>Modifier le compte-rendu</h3>
+              <button class="modal-close" id="summaryModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="summaryEditId" />
+              <div class="summary-form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="summaryEditTitle">Titre</label>
+                  <input type="text" id="summaryEditTitle" class="form-input" placeholder="Titre du résumé" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="summaryEditDate">Date de l'événement</label>
+                  <input type="date" id="summaryEditDate" class="form-input" />
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label" for="summaryEditContent">Contenu</label>
+                  <textarea id="summaryEditContent" class="form-input form-textarea form-textarea-lg" placeholder="Contenu du résumé..."></textarea>
+                </div>
+              </div>
+              <div class="auth-error" id="summaryEditError"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="summaryModalCancel">Annuler</button>
+              <button class="btn-submit" id="btnSaveSummary">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Véhicule -->
+      <section class="section" id="section-vehicule">
+        <div class="section-header">
+          <h1><span class="section-icon">🚗</span> Véhicule</h1>
+          <p class="section-desc">Inventaire et gestion du parc automobile de l'établissement.</p>
+        </div>
+
+        <!-- Stats véhicules -->
+        <div class="stats-grid">
+          <div class="stat-card stat-balance">
+            <div class="stat-label">Total véhicules</div>
+            <div class="stat-value" id="vehicleStatTotal">0</div>
+          </div>
+          <div class="stat-card stat-income">
+            <div class="stat-label">Attribués</div>
+            <div class="stat-value" id="vehicleStatAssigned">0</div>
+          </div>
+          <div class="stat-card stat-expense">
+            <div class="stat-label">Disponibles</div>
+            <div class="stat-value" id="vehicleStatFree">0</div>
+          </div>
+        </div>
+
+        <!-- Formulaire ajout véhicule -->
+        <div class="form-card">
+          <h2 class="form-title">Ajouter un véhicule</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="vehicleName">Nom du véhicule</label>
+              <input type="text" id="vehicleName" class="form-input" placeholder="ex: Dodge Charger, Kawasaki Z900..." autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="vehicleCategory">Catégorie</label>
+              <select id="vehicleCategory" class="form-input form-select">
+                <option value="">-- Catégorie --</option>
+                <option value="Voiture">🚗 Voiture</option>
+                <option value="4X4">🚙 4X4</option>
+                <option value="Moto">🏍️ Moto</option>
+              </select>
+            </div>
+            <div class="form-group form-group-full">
+              <label class="form-label" for="vehicleNotes">Notes</label>
+              <input type="text" id="vehicleNotes" class="form-input" placeholder="Couleur, plaque, particularités... (optionnel)" autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-submit" id="btnAddVehicle">Ajouter le véhicule</button>
+          </div>
+        </div>
+
+        <!-- Filtres véhicules -->
+        <div class="weapons-toolbar">
+          <div class="transactions-filters">
+            <button class="filter-btn active" data-vfilter="all">Tous</button>
+            <button class="filter-btn" data-vfilter="free">Disponibles</button>
+            <button class="filter-btn" data-vfilter="assigned">Attribués</button>
+          </div>
+          <input type="text" id="vehicleSearch" class="form-input weapon-search" placeholder="🔍  Rechercher un véhicule..." />
+        </div>
+
+        <!-- Grille véhicules -->
+        <div class="weapons-grid" id="vehiclesGrid">
+          <div class="weapons-empty" id="vehiclesEmpty">
+            <span>🚗</span>
+            <p>Aucun véhicule dans l'inventaire.</p>
+          </div>
+        </div>
+
+        <!-- Modal attribution véhicule -->
+        <div class="modal-overlay" id="vehicleAssignModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3 id="vehicleAssignModalTitle">Attribuer le véhicule</h3>
+              <button class="modal-close" id="vehicleAssignModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <label class="form-label" for="vehicleAssignSelect">Choisir un membre</label>
+              <select id="vehicleAssignSelect" class="form-input form-select">
+                <option value="">-- Aucun (retirer l'attribution) --</option>
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="vehicleAssignCancel">Annuler</button>
+              <button class="btn-submit" id="btnConfirmVehicleAssign">Confirmer</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Admin -->
+      <section class="section" id="section-admin">
+        <div class="section-header">
+          <h1><span class="section-icon">🛡️</span> Administration</h1>
+          <p class="section-desc">Gestion des comptes membres.</p>
+        </div>
+
+        <!-- Code d'inscription du jour -->
+        <div class="admin-users-card admin-invite-card">
+          <div class="admin-card-header">
+            <h2 class="form-title" style="margin:0">🔐 Code d'inscription du jour</h2>
+          </div>
+          <div class="admin-invite-body">
+            <p class="admin-invite-desc">Communiquez ce code aux employés autorisés à créer un compte. Il expire automatiquement à minuit (UTC) et est renouvelé chaque jour.</p>
+            <div class="admin-invite-code-wrap">
+              <span class="admin-invite-code" id="adminInviteCode">——————</span>
+              <button class="btn-copy-code" id="btnCopyInviteCode" title="Copier le code">📋</button>
+              <button class="btn-refresh" id="btnRefreshInviteCode" title="Actualiser">↻</button>
+            </div>
+            <p class="admin-invite-expire" id="adminInviteExpire"></p>
+          </div>
+        </div>
+
+        <div class="admin-users-card">
+          <div class="admin-card-header admin-card-header-toggle" data-target="adminUsersBody">
+            <h2 class="form-title" style="margin:0">Employés enregistrés</h2>
+            <button class="btn-collapse-toggle" aria-label="Réduire/Agrandir">−</button>
+          </div>
+          <div class="admin-collapsible" id="adminUsersBody">
+            <table class="admin-table" id="adminUsersTable">
+              <thead>
+                <tr>
+                  <th>Identifiant</th>
+                  <th>Nom RP</th>
+                  <th>Rôle</th>
+                  <th>Inscrit le</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTbody">
+                <tr><td colspan="5" class="admin-empty">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Historique des modifications -->
+        <div class="admin-users-card" style="margin-top:1.5rem">
+          <div class="admin-card-header admin-card-header-toggle" data-target="adminLogsBody">
+            <h2 class="form-title" style="margin:0">Historique des modifications</h2>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn-refresh" id="btnRefreshLogs" title="Actualiser">↻</button>
+              <button class="btn-collapse-toggle" aria-label="Réduire/Agrandir">−</button>
+            </div>
+          </div>
+          <div class="admin-collapsible" id="adminLogsBody">
+            <div class="logs-filter-bar">
+              <button class="filter-btn active" data-lfilter="all">Tout</button>
+              <button class="filter-btn" data-lfilter="Groupe">Contacts</button>
+              <button class="filter-btn" data-lfilter="Mission">Événements</button>
+              <button class="filter-btn" data-lfilter="Résumé">Comptes-rendus</button>
+              <button class="filter-btn" data-lfilter="Arme">Personnel</button>
+              <button class="filter-btn" data-lfilter="Véhicule">Véhicules</button>
+              <button class="filter-btn" data-lfilter="Transaction">Transactions</button>
+            </div>
+            <table class="admin-table" id="logsTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Membre</th>
+                  <th>Action</th>
+                  <th>Catégorie</th>
+                  <th>Élément</th>
+                  <th>Détail</th>
+                </tr>
+              </thead>
+              <tbody id="logsTbody">
+                <tr><td colspan="6" class="admin-empty">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Cotisations par membre et par semaine -->
+        <div class="admin-users-card" style="margin-top:1.5rem">
+          <div class="admin-card-header admin-card-header-toggle" data-target="adminCotisBody">
+            <h2 class="form-title" style="margin:0">💰 Contributions par employé et par semaine</h2>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn-refresh" id="btnRefreshCotisations" title="Actualiser">↻</button>
+              <button class="btn-collapse-toggle" aria-label="Réduire/Agrandir">−</button>
+            </div>
+          </div>
+          <div class="admin-collapsible" id="adminCotisBody">
+            <div class="logs-filter-bar">
+              <button class="filter-btn active" data-cfilter="entree">Entrées seulement</button>
+              <button class="filter-btn" data-cfilter="all">Toutes transactions</button>
+            </div>
+            <div class="cotisations-table-wrap" id="cotisationsTableWrap">
+              <p class="admin-empty">Chargement...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal reset mot de passe -->
+        <div class="modal-overlay" id="resetPwdModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3 id="resetPwdTitle">Réinitialiser le mot de passe</h3>
+              <button class="modal-close" id="resetPwdClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="resetPwdUserId" />
+              <div class="form-group">
+                <label class="form-label" for="resetPwdInput">Nouveau mot de passe</label>
+                <input type="text" id="resetPwdInput" class="form-input" placeholder="Nouveau mot de passe..." autocomplete="off" />
+              </div>
+              <div class="auth-error" id="resetPwdError"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="resetPwdCancel">Annuler</button>
+              <button class="btn-submit" id="btnConfirmResetPwd">Réinitialiser</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Territoires -->
+      <section class="section" id="section-territoires">
+        <div class="section-header">
+          <h1><span class="section-icon">🗺️</span> Territoires</h1>
+          <p class="section-desc">Carte interactive de Los Santos — emplacements stratégiques.</p>
+        </div>
+
+        <div class="map-toolbar">
+          <div class="map-toolbar-left">
+            <span class="map-coord-display" id="mapCoordDisplay">Survolez la carte pour voir les coordonnées</span>
+          </div>
+          <div class="map-toolbar-right">
+            <button class="filter-btn" id="btnExportZones" title="Exporter mes tracés">📤 Exporter zones</button>
+            <button class="filter-btn" id="btnToggleEditor">✏️ Mode édition zones</button>
+            <!-- Les contrôles d'édition sont masqués individuellement via style="display:none"
+                 et rendus visibles par initMapEditor() quand le mode édition est activé.
+                 display:contents sur le wrapper permet d'ignorer ce div dans le layout flex. -->
+            <div id="editorControls" style="display:none; display:contents">
+              <select id="editorZoneSelect" class="form-input form-select editor-zone-select" style="display:none"></select>
+              <button class="btn-assign" id="btnStartDraw" style="display:none">▶ Tracer</button>
+              <button class="btn-cancel" id="btnClearDraw" style="display:none">✕ Effacer</button>
+              <button class="btn-submit" id="btnSaveZone" style="display:none">💾 Sauvegarder</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-wrapper">
+          <div id="gtaMap"></div>
+        </div>
+
+        <!-- Modal export zones -->
+        <div class="modal-overlay" id="exportZonesModal">
+          <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+              <h3>📤 Exporter mes tracés</h3>
+              <button class="modal-close" id="exportZonesClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px">Sélectionne tout le texte ci-dessous (Ctrl+A) puis copie-le (Ctrl+C) et envoie-le.</p>
+              <textarea id="exportZonesData" class="form-input form-textarea-lg" readonly style="font-size:11px;font-family:monospace;height:260px"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-submit" id="btnCopyZones">📋 Copier</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-coords-panel" id="editorCoordsPanel" style="display:none">
+          <span class="editor-coords-title">Points tracés :</span>
+          <code id="editorCoordsOutput">—</code>
+        </div>
+
+      </section>
+
+      <!-- Événements -->
+      <section class="section" id="section-missions">
+        <div class="section-header">
+          <h1><span class="section-icon">🎭</span> Événements</h1>
+          <p class="section-desc">Planification et suivi des événements et soirées de l'établissement.</p>
+        </div>
+
+        <div class="groups-toolbar">
+          <div class="transactions-filters">
+            <button class="filter-btn active" data-mfilter="all">Tous</button>
+            <button class="filter-btn" data-mfilter="en_cours">En cours</button>
+            <button class="filter-btn" data-mfilter="termine">Terminés</button>
+            <button class="filter-btn" data-mfilter="echoue">Annulés</button>
+          </div>
+          <button class="btn-submit" id="btnOpenAddMission">+ Nouvel événement</button>
+        </div>
+
+        <div class="missions-grid" id="missionsGrid">
+          <div class="missions-empty" id="missionsEmpty">
+            <span>🎭</span>
+            <p>Aucun événement enregistré pour l'instant.</p>
+          </div>
+        </div>
+
+        <!-- Modal ajout/édition événement -->
+        <div class="modal-overlay" id="missionModal">
+          <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+              <h3 id="missionModalTitle">Nouvel événement</h3>
+              <button class="modal-close" id="missionModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="missionEditId" />
+              <div class="summary-form-grid">
+                <div class="form-group">
+                  <label class="form-label" for="missionTitle">Titre de l'événement</label>
+                  <input type="text" id="missionTitle" class="form-input" placeholder="ex: VIP Night — Vendredi" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="missionPriority">Type d'événement</label>
+                  <select id="missionPriority" class="form-input form-select">
+                    <option value="basse">🎵 Soirée Standard</option>
+                    <option value="normale" selected>🍾 Soirée Spéciale</option>
+                    <option value="haute">🏆 VIP Night / Gala</option>
+                  </select>
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label" for="missionDesc">Description</label>
+                  <textarea id="missionDesc" class="form-input form-textarea" placeholder="Programme, dress code, artistes invités, tarifs, conditions particulières..."></textarea>
+                </div>
+                <div class="form-group form-group-full">
+                  <label class="form-label">👤 Personnel assigné</label>
+                  <div class="zone-selector" id="missionMembersSelector"></div>
+                </div>
+              </div>
+              <div class="auth-error" id="missionError"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="missionModalCancel">Annuler</button>
+              <button class="btn-submit" id="btnSaveMission">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal profil membre -->
+  <div class="modal-overlay" id="memberProfileModal">
+    <div class="modal-box modal-box-lg">
+      <div class="modal-header">
+        <h3 id="profileModalTitle">Profil membre</h3>
+        <button class="modal-close" id="profileModalClose">✕</button>
+      </div>
+      <div class="modal-body" id="profileModalBody">
+        <div class="profile-grid">
+          <div class="profile-info">
+            <div class="profile-avatar" id="profileAvatar"></div>
+            <div>
+              <div class="profile-rp-name" id="profileRpName"></div>
+              <div class="profile-username" id="profileUsername"></div>
+              <div class="profile-since" id="profileSince"></div>
+            </div>
+          </div>
+          <div class="profile-stats">
+            <div class="stat-card stat-balance"><div class="stat-label">Transactions</div><div class="stat-value" id="profileTxCount">0</div></div>
+            <div class="stat-card stat-income"><div class="stat-label">Affectations</div><div class="stat-value" id="profileWeaponCount">0</div></div>
+            <div class="stat-card stat-expense"><div class="stat-label">Véhicules</div><div class="stat-value" id="profileVehicleCount">0</div></div>
+          </div>
+        </div>
+        <div class="profile-sections">
+          <div class="profile-section-block">
+            <h4>💼 Employés affectés</h4>
+            <div id="profileWeapons" class="profile-items"></div>
+          </div>
+          <div class="profile-section-block">
+            <h4>🚗 Véhicules affectés</h4>
+            <div id="profileVehicles" class="profile-items"></div>
+          </div>
+          <div class="profile-section-block profile-full">
+            <h4>💸 Dernières transactions</h4>
+            <div id="profileTx" class="profile-items"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet pour la carte interactive des territoires (CRS.Simple, sans projection géo). -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js pour le graphique d'évolution du solde dans la section Comptabilité. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Logique applicative principale — doit être chargé après Leaflet et Chart.js. -->
+  <script src="app.js"></script>
+</body>
+</html> 

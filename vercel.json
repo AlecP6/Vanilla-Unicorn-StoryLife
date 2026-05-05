@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "backend/server.js", "use": "@vercel/node" },
+    { "src": "index.html",        "use": "@vercel/static" },
+    { "src": "style.css",         "use": "@vercel/static" },
+    { "src": "app.js",            "use": "@vercel/static" },
+    { "src": "image.png",         "use": "@vercel/static" },
+    { "src": "gta5-map.jpg",      "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)",    "dest": "backend/server.js" },
+    { "src": "/style.css",   "dest": "/style.css" },
+    { "src": "/app.js",      "dest": "/app.js" },
+    { "src": "/image.png",   "dest": "/image.png" },
+    { "src": "/gta5-map.jpg","dest": "/gta5-map.jpg" },
+    { "src": "/(.*)",        "dest": "/index.html" }
+  ]
+}
