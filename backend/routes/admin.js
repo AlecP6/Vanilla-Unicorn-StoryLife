@@ -33,9 +33,20 @@ router.get('/register-code', auth, adminOnly, (req, res) => {
 router.get('/users', auth, adminOnly, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, username, rp_name, is_admin, created_at FROM users ORDER BY created_at ASC'
+      'SELECT id, username, rp_name, poste, is_admin, created_at FROM users ORDER BY created_at ASC'
     );
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// PATCH /api/admin/users/:id/poste — modifier le poste d'un employé
+router.patch('/users/:id/poste', auth, adminOnly, async (req, res) => {
+  const { poste } = req.body;
+  try {
+    await pool.query('UPDATE users SET poste = $1 WHERE id = $2', [poste?.trim() || '', req.params.id]);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur.' });
   }

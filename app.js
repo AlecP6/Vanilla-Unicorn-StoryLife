@@ -7,7 +7,7 @@ const API = '/api';
 // Chaque carte repart de opacity:0 puis se réanime avec un délai de 55ms × son index,
 // produisant un effet visuel d'entrée en cascade plutôt qu'un apparition simultanée.
 function applyStagger(grid) {
-  const cards = grid.querySelectorAll('.weapon-card, .group-card, .mission-card');
+  const cards = grid.querySelectorAll('.group-card, .mission-card, .vip-card');
   cards.forEach((el, i) => {
     el.style.opacity = '0';
     el.style.animation = 'none';
@@ -154,6 +154,7 @@ document.getElementById('btnRegister')?.addEventListener('click', async () => {
   const rp_name     = document.getElementById('regRpName').value.trim();
   const password    = document.getElementById('regPwd').value;
   const confirm     = document.getElementById('regPwdConfirm').value;
+  const poste       = document.getElementById('regPoste').value;
   const invite_code = document.getElementById('regInviteCode').value.trim();
 
   if (!username)    return setAuthError('panelRegister', 'L\'identifiant est requis.');
@@ -168,7 +169,7 @@ document.getElementById('btnRegister')?.addEventListener('click', async () => {
     const res  = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, rp_name, password, invite_code }),
+      body: JSON.stringify({ username, rp_name, password, invite_code, poste }),
     });
     const data = await res.json();
     if (!res.ok) return setAuthError('panelRegister', data.error || 'Erreur.');
@@ -264,12 +265,11 @@ const topbarTitle = document.getElementById('topbarTitle');
 
 // Correspondance entre l'id de section et le titre affiché dans la topbar.
 const sectionTitles = {
-  'dashboard':     'Dashboard',
-  'comptabilite':  'Comptabilité',
-  'armement':      'Personnel',
-  'groupes':       'Contacts',
-  'missions':      'Événements',
-  'admin':         'Administration',
+  'dashboard':    'Dashboard',
+  'comptabilite': 'Comptabilité',
+  'groupes':      'Contacts',
+  'missions':     'Événements',
+  'admin':        'Administration',
 };
 
 // Restore session on load
@@ -299,26 +299,15 @@ function switchSection(targetId) {
     if (targetId === 'comptabilite') {
       refreshComptabilite();
     }
-    if (targetId === 'armement') {
-      fetchWeapons();
-      fetchMembers();
-    }
     if (targetId === 'groupes') {
       fetchGroups();
-    }
-    if (targetId === 'resume-tables') {
-      fetchSummaries();
-      initSummaryDate();
-    }
-    if (targetId === 'vehicule') {
-      fetchVehicles();
-      fetchMembers();
     }
     if (targetId === 'dashboard') {
       refreshDashboard();
     }
     if (targetId === 'missions') {
       fetchMissions();
+      fetchMembers();
     }
     if (targetId === 'admin') {
       fetchAdminInviteCode();
@@ -568,249 +557,24 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
-// ===== ARMEMENT =====
-// Caches locaux des armes et des membres, filtres actifs et id de l'arme en attente d'attribution.
-let weapons      = [];
-let members      = [];
-let weaponFilter = 'all';   // 'all' | 'free' | 'assigned'
-let weaponSearch = '';
-let assignTarget = null;    // id de l'arme dont la modale d'attribution est ouverte
+// ===== MEMBRES =====
+let members = [];
 
-const CATEGORY_ICONS = {
-  'Danseuse':           '💃',
-  'Agent de sécurité':  '🛡️',
-  'Barman/Barmaid':     '🍸',
-  'DJ':                 '🎧',
-  'Manager':            '💼',
-  'Serveuse/Serveur':   '🥂',
-};
-
-async function fetchWeapons() {
-  try {
-    const res  = await fetch(`${API}/weapons`, { headers: authHeaders() });
-    const data = await res.json();
-    if (!res.ok) return;
-    weapons = data;
-    renderWeapons();
-    updateWeaponStats();
-  } catch { console.error('Erreur chargement armes.'); }
-}
-
-// Récupère la liste des membres et repeuple les deux selects d'attribution
-// (armes et véhicules) qui dépendent de cette liste.
 async function fetchMembers() {
   try {
     const res  = await fetch(`${API}/members`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
     members = data;
-    populateAssignSelect();
-    populateVehicleAssignSelect();
   } catch { console.error('Erreur chargement membres.'); }
 }
 
-function updateWeaponStats() {
-  const total    = weapons.length;
-  const assigned = weapons.filter(w => w.assigned_to).length;
-  animateCounter(document.getElementById('weaponStatTotal'),    total);
-  animateCounter(document.getElementById('weaponStatAssigned'), assigned);
-  animateCounter(document.getElementById('weaponStatFree'),     total - assigned);
-}
-
-// Retourne les armes correspondant au filtre actif (disponible / attribuée / toutes)
-// ET à la recherche textuelle (portant sur le nom ou la catégorie).
-function getFilteredWeapons() {
-  return weapons.filter(w => {
-    if (weaponFilter === 'free'     && w.assigned_to)  return false;
-    if (weaponFilter === 'assigned' && !w.assigned_to) return false;
-    if (weaponSearch) {
-      const q = weaponSearch.toLowerCase();
-      if (!w.name.toLowerCase().includes(q) && !w.category.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
-}
-
-function renderWeapons() {
-  const grid  = document.getElementById('weaponsGrid');
-  const empty = document.getElementById('weaponsEmpty');
-  const list  = getFilteredWeapons();
-
-  // Remove old cards
-  Array.from(grid.querySelectorAll('.weapon-card')).forEach(c => c.remove());
-
-  if (list.length === 0) {
-    empty.style.display = '';
-    return;
-  }
-  empty.style.display = 'none';
-
-  list.forEach(w => {
-    const card = document.createElement('div');
-    card.className  = `weapon-card ${w.assigned_to ? 'is-assigned' : 'is-free'}`;
-    card.dataset.id = w.id;
-
-    const icon     = CATEGORY_ICONS[w.category] || '🔧';
-    // Génère les initiales du propriétaire depuis son nom RP (ex : "Jean Dupont" → "JD").
-    const initials = w.assigned_to_name
-      ? w.assigned_to_name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2)
-      : '—';
-
-    card.innerHTML = `
-      <div class="weapon-card-top">
-        <div class="weapon-card-category">${icon} ${escapeHtml(w.category)}</div>
-        <div class="weapon-card-name">${escapeHtml(w.name)}</div>
-        ${w.notes ? `<div class="weapon-card-notes">${escapeHtml(w.notes)}</div>` : ''}
-      </div>
-      <div class="weapon-card-divider"></div>
-      <div class="weapon-card-bottom">
-        <div class="weapon-assignee">
-          <div class="weapon-assignee-avatar ${w.assigned_to ? 'assigned' : 'free'}">${initials}</div>
-          <span class="weapon-assignee-name ${w.assigned_to ? 'assigned' : 'free'}">
-            ${w.assigned_to ? escapeHtml(w.assigned_to_name) : 'Disponible'}
-          </span>
-        </div>
-        <div class="weapon-card-actions">
-          <button class="btn-assign" data-id="${w.id}" title="Attribuer">
-            ${w.assigned_to ? '↩ Modifier' : '+ Attribuer'}
-          </button>
-          <button class="btn-delete" data-weapon-id="${w.id}" title="Supprimer">✕</button>
-        </div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-  applyStagger(grid);
-}
-
-// Réinitialise et repeuple le <select> d'attribution des armes avec la liste
-// des membres actuels. L'option vide permet de retirer une attribution existante.
-function populateAssignSelect() {
-  const sel = document.getElementById('assignSelect');
-  sel.innerHTML = '<option value="">-- Aucun (retirer l\'attribution) --</option>';
-  members.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value       = m.id;
-    opt.textContent = m.rp_name;
-    sel.appendChild(opt);
-  });
-}
-
-// Add weapon
-document.getElementById('btnAddWeapon')?.addEventListener('click', async () => {
-  if (!currentUser) return;
-  const name     = document.getElementById('weaponName').value.trim();
-  const category = document.getElementById('weaponCategory').value;
-  const notes    = document.getElementById('weaponNotes').value.trim();
-
-  if (!name)     return flashInput('weaponName',     'Nom requis');
-  if (!category) return flashInput('weaponCategory', 'Catégorie requise');
-
-  const btn = document.getElementById('btnAddWeapon');
-  btn.disabled = true; btn.textContent = 'Ajout...';
-
-  try {
-    const res  = await fetch(`${API}/weapons`, {
-      method:  'POST',
-      headers: authHeaders(),
-      body:    JSON.stringify({ name, category, notes }),
-    });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || 'Erreur.', 'error'); return; }
-    weapons.unshift(data);
-    updateWeaponStats();
-    renderWeapons();
-    document.getElementById('weaponName').value  = '';
-    document.getElementById('weaponCategory').value = '';
-    document.getElementById('weaponNotes').value = '';
-  } catch { showToast('Impossible de contacter le serveur.', 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Ajouter l\'employé'; }
-});
-
-// Click on grid (assign / delete)
-document.getElementById('weaponsGrid')?.addEventListener('click', (e) => {
-  const assignBtn = e.target.closest('.btn-assign');
-  const deleteBtn = e.target.closest('[data-weapon-id]');
-
-  if (assignBtn) {
-    assignTarget = Number(assignBtn.dataset.id);
-    const weapon = weapons.find(w => w.id === assignTarget);
-    document.getElementById('assignModalTitle').textContent = `Affecter : ${weapon?.name}`;
-    populateAssignSelect();
-    const sel = document.getElementById('assignSelect');
-    sel.value = weapon?.assigned_to ?? '';
-    openModal('assignModal');
-  }
-
-  if (deleteBtn && !assignBtn) {
-    const id = Number(deleteBtn.dataset.weaponId);
-    deleteWeapon(id);
-  }
-});
-
-async function deleteWeapon(id) {
-  try {
-    const res = await fetch(`${API}/weapons/${id}`, { method: 'DELETE', headers: authHeaders() });
-    if (!res.ok) return;
-    weapons = weapons.filter(w => w.id !== id);
-    updateWeaponStats();
-    renderWeapons();
-  } catch { showToast('Impossible de contacter le serveur.', 'error'); }
-}
-
-// Modal confirm assign
-document.getElementById('btnConfirmAssign')?.addEventListener('click', async () => {
-  if (assignTarget === null) return;
-  const userId = document.getElementById('assignSelect').value || null;
-  const parsed = userId ? parseInt(userId) : null;
-
-  try {
-    const res  = await fetch(`${API}/weapons/${assignTarget}/assign`, {
-      method:  'PATCH',
-      headers: authHeaders(),
-      body:    JSON.stringify({ user_id: parsed }),
-    });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || 'Erreur.', 'error'); return; }
-    const idx = weapons.findIndex(w => w.id === assignTarget);
-    if (idx !== -1) weapons[idx] = data;
-    updateWeaponStats();
-    renderWeapons();
-    closeModal('assignModal');
-  } catch { showToast('Impossible de contacter le serveur.', 'error'); }
-});
-
-// Ouvre/ferme une modale par son id. closeModal remet également assignTarget à null
-// pour éviter qu'une ancienne cible ne soit réutilisée par erreur.
 function openModal(id) {
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-  assignTarget = null;
 }
-
-document.getElementById('assignModalClose')?.addEventListener('click',  () => closeModal('assignModal'));
-document.getElementById('assignModalCancel')?.addEventListener('click', () => closeModal('assignModal'));
-document.getElementById('assignModal')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('assignModal')) closeModal('assignModal');
-});
-
-// Filters
-document.querySelectorAll('[data-wfilter]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-wfilter]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    weaponFilter = btn.dataset.wfilter;
-    renderWeapons();
-  });
-});
-
-// Search
-document.getElementById('weaponSearch')?.addEventListener('input', (e) => {
-  weaponSearch = e.target.value.trim();
-  renderWeapons();
-});
 
 // ===== GROUPES =====
 // Cache local des groupes et terme de recherche en cours.
@@ -1464,15 +1228,15 @@ let adminUsers = [];
 async function fetchAdminUsers() {
   const tbody = document.getElementById('adminUsersTbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">Chargement...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Chargement...</td></tr>';
   try {
     const res  = await fetch(`${API}/admin/users`, { headers: authHeaders() });
     const data = await res.json();
-    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">${data.error}</td></tr>`; return; }
+    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="6" class="admin-empty">${data.error}</td></tr>`; return; }
     adminUsers = data;
     renderAdminUsers();
   } catch {
-    tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">Impossible de contacter le serveur.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Impossible de contacter le serveur.</td></tr>';
   }
 }
 
@@ -1480,13 +1244,17 @@ function renderAdminUsers() {
   const tbody = document.getElementById('adminUsersTbody');
   if (!tbody) return;
   if (adminUsers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="admin-empty">Aucun membre enregistré.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">Aucun membre enregistré.</td></tr>';
     return;
   }
   tbody.innerHTML = adminUsers.map(u => `
     <tr>
       <td><span class="admin-username">${escapeHtml(u.username)}</span></td>
       <td>${escapeHtml(u.rp_name)}</td>
+      <td>
+        <span class="admin-poste">${escapeHtml(u.poste || '—')}</span>
+        <button class="btn-edit btn-edit-poste" data-edit-poste-id="${u.id}" data-edit-poste-name="${escapeHtml(u.rp_name)}" data-edit-poste-val="${escapeHtml(u.poste || '')}" title="Modifier le poste">✏️</button>
+      </td>
       <td>
         <span class="badge ${u.is_admin ? 'badge-admin' : 'badge-member'}">
           ${u.is_admin ? '🛡️ Admin' : '👤 Membre'}
@@ -1505,6 +1273,16 @@ function renderAdminUsers() {
 }
 
 document.getElementById('adminUsersTbody')?.addEventListener('click', async (e) => {
+  // Modifier poste
+  const posteBtn = e.target.closest('[data-edit-poste-id]');
+  if (posteBtn) {
+    document.getElementById('editPosteUserId').value        = posteBtn.dataset.editPosteId;
+    document.getElementById('editPosteTitle').textContent  = `Poste : ${posteBtn.dataset.editPosteName}`;
+    document.getElementById('editPosteSelect').value       = posteBtn.dataset.editPosteVal;
+    document.getElementById('editPosteError').textContent  = '';
+    openModal('editPosteModal');
+    return;
+  }
   // Reset mot de passe
   const resetBtn = e.target.closest('[data-reset-id]');
   if (resetBtn) {
@@ -1561,6 +1339,30 @@ document.getElementById('resetPwdClose')?.addEventListener('click',  () => close
 document.getElementById('resetPwdCancel')?.addEventListener('click', () => closeModal('resetPwdModal'));
 document.getElementById('resetPwdModal')?.addEventListener('click', (e) => {
   if (e.target === document.getElementById('resetPwdModal')) closeModal('resetPwdModal');
+});
+
+// Modifier poste — sauvegarder
+document.getElementById('btnConfirmEditPoste')?.addEventListener('click', async () => {
+  const id    = document.getElementById('editPosteUserId').value;
+  const poste = document.getElementById('editPosteSelect').value;
+  const err   = document.getElementById('editPosteError');
+  err.textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/users/${id}/poste`, {
+      method: 'PATCH', headers: authHeaders(),
+      body: JSON.stringify({ poste }),
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error || 'Erreur.'; return; }
+    closeModal('editPosteModal');
+    fetchAdminUsers();
+    showToast('Poste mis à jour.');
+  } catch { err.textContent = 'Impossible de contacter le serveur.'; }
+});
+document.getElementById('editPosteClose')?.addEventListener('click',  () => closeModal('editPosteModal'));
+document.getElementById('editPosteCancel')?.addEventListener('click', () => closeModal('editPosteModal'));
+document.getElementById('editPosteModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('editPosteModal')) closeModal('editPosteModal');
 });
 
 // ===== HISTORIQUE DES MODIFICATIONS =====

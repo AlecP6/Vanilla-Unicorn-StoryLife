@@ -16,7 +16,7 @@ function getDailyRegisterCode() {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { username, rp_name, password, invite_code } = req.body;
+  const { username, rp_name, password, invite_code, poste } = req.body;
 
   if (!username || !rp_name || !password || !invite_code) {
     return res.status(400).json({ error: 'Tous les champs sont requis.' });
@@ -39,8 +39,8 @@ router.post('/register', async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (username, rp_name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, rp_name',
-      [username, rp_name, password_hash]
+      'INSERT INTO users (username, rp_name, password_hash, poste) VALUES ($1, $2, $3, $4) RETURNING id, username, rp_name, poste',
+      [username, rp_name, password_hash, poste?.trim() || '']
     );
 
     const user = result.rows[0];
@@ -50,7 +50,7 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.status(201).json({ token, user: { id: user.id, username: user.username, rp_name: user.rp_name } });
+    res.status(201).json({ token, user: { id: user.id, username: user.username, rp_name: user.rp_name, poste: user.poste } });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Erreur serveur.' });

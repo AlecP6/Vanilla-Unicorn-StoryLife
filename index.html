@@ -89,6 +89,18 @@
             <input type="password" id="regPwdConfirm" class="auth-input" placeholder="••••••••" />
           </div>
           <div class="auth-field">
+            <label class="auth-label" for="regPoste">Poste</label>
+            <select id="regPoste" class="auth-input auth-select">
+              <option value="">-- Sélectionner un poste --</option>
+              <option value="Danseuse">Danseuse</option>
+              <option value="Agent de sécurité">Agent de sécurité</option>
+              <option value="Barman / Barmaid">Barman / Barmaid</option>
+              <option value="DJ">DJ</option>
+              <option value="Manager">Manager</option>
+              <option value="Serveuse / Serveur">Serveuse / Serveur</option>
+            </select>
+          </div>
+          <div class="auth-field">
             <label class="auth-label" for="regInviteCode">Code d'invitation <span class="auth-label-required">(fourni par un admin)</span></label>
             <input type="text" id="regInviteCode" class="auth-input auth-input-code" placeholder="XXXXXX" maxlength="6" autocomplete="off" spellcheck="false" />
           </div>
@@ -126,12 +138,6 @@
           <a href="#" class="nav-item" data-section="comptabilite">
             <span class="nav-icon">📊</span>
             <span class="nav-label">Comptabilité</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" class="nav-item" data-section="armement">
-            <span class="nav-icon">👤</span>
-            <span class="nav-label">Personnel</span>
           </a>
         </li>
         <li>
@@ -193,10 +199,6 @@
           <div class="stat-card stat-balance">
             <div class="stat-label">Solde total</div>
             <div class="stat-value" id="dashBalance">$0</div>
-          </div>
-          <div class="stat-card stat-income">
-            <div class="stat-label">Personnel actif</div>
-            <div class="stat-value" id="dashWeapons">0</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Contacts / Partenaires</div>
@@ -352,98 +354,6 @@
       </section>
 
       <!-- Personnel -->
-      <section class="section" id="section-armement">
-        <div class="section-header">
-          <h1><span class="section-icon">👤</span> Personnel</h1>
-          <p class="section-desc">Gestion et affectation du personnel de l'établissement.</p>
-        </div>
-
-        <!-- Stats personnel -->
-        <div class="stats-grid">
-          <div class="stat-card stat-balance">
-            <div class="stat-label">Total staff</div>
-            <div class="stat-value" id="weaponStatTotal">0</div>
-          </div>
-          <div class="stat-card stat-income">
-            <div class="stat-label">En service</div>
-            <div class="stat-value" id="weaponStatAssigned">0</div>
-          </div>
-          <div class="stat-card stat-expense">
-            <div class="stat-label">Disponibles</div>
-            <div class="stat-value" id="weaponStatFree">0</div>
-          </div>
-        </div>
-
-        <!-- Formulaire ajout employé -->
-        <div class="form-card">
-          <h2 class="form-title">Ajouter un employé</h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" for="weaponName">Prénom Nom (RP)</label>
-              <input type="text" id="weaponName" class="form-input" placeholder="ex: Jessica Stone" autocomplete="off" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="weaponCategory">Poste</label>
-              <select id="weaponCategory" class="form-input form-select">
-                <option value="">-- Poste --</option>
-                <option value="Danseuse">Danseuse</option>
-                <option value="Agent de sécurité">Agent de sécurité</option>
-                <option value="Barman/Barmaid">Barman / Barmaid</option>
-                <option value="DJ">DJ</option>
-                <option value="Manager">Manager</option>
-                <option value="Serveuse/Serveur">Serveuse / Serveur</option>
-              </select>
-            </div>
-            <div class="form-group form-group-full">
-              <label class="form-label" for="weaponNotes">Notes</label>
-              <input type="text" id="weaponNotes" class="form-input" placeholder="Disponibilités, contrat, particularités... (optionnel)" autocomplete="off" />
-            </div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-submit" id="btnAddWeapon">Ajouter l'employé</button>
-          </div>
-        </div>
-
-        <!-- Filtres personnel -->
-        <div class="weapons-toolbar">
-          <div class="transactions-filters">
-            <button class="filter-btn active" data-wfilter="all">Tout le staff</button>
-            <button class="filter-btn" data-wfilter="free">Disponibles</button>
-            <button class="filter-btn" data-wfilter="assigned">En service</button>
-          </div>
-          <input type="text" id="weaponSearch" class="form-input weapon-search" placeholder="🔍  Rechercher un employé..." />
-        </div>
-
-        <!-- Grille personnel -->
-        <div class="weapons-grid" id="weaponsGrid">
-          <div class="weapons-empty" id="weaponsEmpty">
-            <span>👤</span>
-            <p>Aucun employé enregistré.</p>
-          </div>
-        </div>
-
-        <!-- Modal affectation -->
-        <div class="modal-overlay" id="assignModal">
-          <div class="modal-box">
-            <div class="modal-header">
-              <h3 id="assignModalTitle">Affecter l'employé</h3>
-              <button class="modal-close" id="assignModalClose">✕</button>
-            </div>
-            <div class="modal-body">
-              <label class="form-label" for="assignSelect">Affecter à un manager</label>
-              <select id="assignSelect" class="form-input form-select">
-                <option value="">-- Non affecté --</option>
-              </select>
-            </div>
-            <div class="modal-footer">
-              <button class="btn-cancel" id="assignModalCancel">Annuler</button>
-              <button class="btn-submit" id="btnConfirmAssign">Confirmer</button>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
       <!-- Contacts -->
       <section class="section" id="section-groupes">
         <div class="section-header">
@@ -544,13 +454,14 @@
                 <tr>
                   <th>Identifiant</th>
                   <th>Nom RP</th>
+                  <th>Poste</th>
                   <th>Rôle</th>
                   <th>Inscrit le</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="adminUsersTbody">
-                <tr><td colspan="5" class="admin-empty">Chargement...</td></tr>
+                <tr><td colspan="6" class="admin-empty">Chargement...</td></tr>
               </tbody>
             </table>
           </div>
@@ -570,7 +481,6 @@
               <button class="filter-btn active" data-lfilter="all">Tout</button>
               <button class="filter-btn" data-lfilter="Groupe">Contacts</button>
               <button class="filter-btn" data-lfilter="Mission">Événements</button>
-              <button class="filter-btn" data-lfilter="Arme">Personnel</button>
               <button class="filter-btn" data-lfilter="Transaction">Transactions</button>
             </div>
             <table class="admin-table" id="logsTable">
@@ -607,6 +517,36 @@
             </div>
             <div class="cotisations-table-wrap" id="cotisationsTableWrap">
               <p class="admin-empty">Chargement...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal édition poste -->
+        <div class="modal-overlay" id="editPosteModal">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3 id="editPosteTitle">Modifier le poste</h3>
+              <button class="modal-close" id="editPosteClose">✕</button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="editPosteUserId" />
+              <div class="form-group">
+                <label class="form-label" for="editPosteSelect">Poste</label>
+                <select id="editPosteSelect" class="form-input form-select">
+                  <option value="">-- Aucun --</option>
+                  <option value="Danseuse">Danseuse</option>
+                  <option value="Agent de sécurité">Agent de sécurité</option>
+                  <option value="Barman / Barmaid">Barman / Barmaid</option>
+                  <option value="DJ">DJ</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Serveuse / Serveur">Serveuse / Serveur</option>
+                </select>
+              </div>
+              <div class="auth-error" id="editPosteError"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" id="editPosteCancel">Annuler</button>
+              <button class="btn-submit" id="btnConfirmEditPoste">Enregistrer</button>
             </div>
           </div>
         </div>
