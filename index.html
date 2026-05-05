@@ -467,60 +467,6 @@
           </div>
         </div>
 
-        <!-- Historique des modifications -->
-        <div class="admin-users-card" style="margin-top:1.5rem">
-          <div class="admin-card-header admin-card-header-toggle" data-target="adminLogsBody">
-            <h2 class="form-title" style="margin:0">Historique des modifications</h2>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button class="btn-refresh" id="btnRefreshLogs" title="Actualiser">↻</button>
-              <button class="btn-collapse-toggle" aria-label="Réduire/Agrandir">−</button>
-            </div>
-          </div>
-          <div class="admin-collapsible" id="adminLogsBody">
-            <div class="logs-filter-bar">
-              <button class="filter-btn active" data-lfilter="all">Tout</button>
-              <button class="filter-btn" data-lfilter="Groupe">Contacts</button>
-              <button class="filter-btn" data-lfilter="Mission">Événements</button>
-              <button class="filter-btn" data-lfilter="Transaction">Transactions</button>
-            </div>
-            <table class="admin-table" id="logsTable">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Membre</th>
-                  <th>Action</th>
-                  <th>Catégorie</th>
-                  <th>Élément</th>
-                  <th>Détail</th>
-                </tr>
-              </thead>
-              <tbody id="logsTbody">
-                <tr><td colspan="6" class="admin-empty">Chargement...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Cotisations par membre et par semaine -->
-        <div class="admin-users-card" style="margin-top:1.5rem">
-          <div class="admin-card-header admin-card-header-toggle" data-target="adminCotisBody">
-            <h2 class="form-title" style="margin:0">💰 Contributions par employé et par semaine</h2>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button class="btn-refresh" id="btnRefreshCotisations" title="Actualiser">↻</button>
-              <button class="btn-collapse-toggle" aria-label="Réduire/Agrandir">−</button>
-            </div>
-          </div>
-          <div class="admin-collapsible" id="adminCotisBody">
-            <div class="logs-filter-bar">
-              <button class="filter-btn active" data-cfilter="entree">Entrées seulement</button>
-              <button class="filter-btn" data-cfilter="all">Toutes transactions</button>
-            </div>
-            <div class="cotisations-table-wrap" id="cotisationsTableWrap">
-              <p class="admin-empty">Chargement...</p>
-            </div>
-          </div>
-        </div>
-
         <!-- Modal édition poste -->
         <div class="modal-overlay" id="editPosteModal">
           <div class="modal-box">
