@@ -3069,3 +3069,69 @@ body {
   color: var(--gold);
   text-align: center;
 }
+
+/* ===== NAVIGATION PAR SEMAINE ===== */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.week-nav-label {
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 200px;
+}
+
+.week-nav-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.week-nav-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.week-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.week-nav-today {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.week-nav-today:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ===== DANGER CARD ADMIN ===== */
+.admin-danger-card .admin-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

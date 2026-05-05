@@ -3,6 +3,12 @@ const pool    = require('../db');
 const auth    = require('../middleware/authMiddleware');
 const router  = express.Router();
 
+async function adminOnly(req, res, next) {
+  const { rows } = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
+  if (!rows[0]?.is_admin) return res.status(403).json({ error: 'Accès refusé.' });
+  next();
+}
+
 // GET /api/sales/items — catalogue de tous les articles
 router.get('/items', auth, async (req, res) => {
   try {
@@ -13,20 +19,51 @@ router.get('/items', auth, async (req, res) => {
   } catch { res.status(500).json({ error: 'Erreur serveur.' }); }
 });
 
-// GET /api/sales/my — historique des ventes de l'utilisateur connecté
+// GET /api/sales/my — historique des ventes de l'utilisateur connecté (filtrable par semaine)
 router.get('/my', auth, async (req, res) => {
   try {
-    const { rows } = await pool.query(`
-      SELECT s.id, s.quantity, s.unit_price, s.total, s.created_at,
-             i.name AS item_name, i.category
-      FROM sales s
-      JOIN sale_items i ON s.item_id = i.id
-      WHERE s.user_id = $1
-      ORDER BY s.created_at DESC
-      LIMIT 50
-    `, [req.user.id]);
+    const { week_start } = req.query;
+    let rows;
+    if (week_start && /^\d{4}-\d{2}-\d{2}$/.test(week_start)) {
+      ({ rows } = await pool.query(`
+        SELECT s.id, s.quantity, s.unit_price, s.total, s.created_at,
+               i.name AS item_name, i.category
+        FROM sales s
+        JOIN sale_items i ON s.item_id = i.id
+        WHERE s.user_id = $1
+          AND s.created_at >= $2::date
+          AND s.created_at < ($2::date + INTERVAL '7 days')
+        ORDER BY s.created_at DESC
+      `, [req.user.id, week_start]));
+    } else {
+      ({ rows } = await pool.query(`
+        SELECT s.id, s.quantity, s.unit_price, s.total, s.created_at,
+               i.name AS item_name, i.category
+        FROM sales s
+        JOIN sale_items i ON s.item_id = i.id
+        WHERE s.user_id = $1
+        ORDER BY s.created_at DESC
+        LIMIT 50
+      `, [req.user.id]));
+    }
     res.json(rows);
   } catch { res.status(500).json({ error: 'Erreur serveur.' }); }
+});
+
+// DELETE /api/sales/all — réinitialise toutes les ventes et leurs transactions liées (admin seulement)
+router.delete('/all', auth, adminOnly, async (req, res) => {
+  try {
+    const txRes = await pool.query('SELECT transaction_id FROM sales WHERE transaction_id IS NOT NULL');
+    const txIds = txRes.rows.map(r => r.transaction_id);
+    await pool.query('DELETE FROM sales');
+    if (txIds.length > 0) {
+      await pool.query('DELETE FROM transactions WHERE id = ANY($1)', [txIds]);
+    }
+    res.json({ success: true, deleted_sales: txRes.rows.length });
+  } catch (err) {
+    console.error('Reset sales error:', err);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
 });
 
 // POST /api/sales — enregistrer une vente + créer la transaction comptable

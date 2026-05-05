@@ -254,6 +254,14 @@
 
       <!-- Comptabilité -->
       <section class="section" id="section-comptabilite">
+        <!-- Navigation par semaine -->
+        <div class="week-nav">
+          <button class="week-nav-btn" id="btnComptaPrevWeek">&#8249; Précédente</button>
+          <span class="week-nav-label" id="comptaWeekLabel"></span>
+          <button class="week-nav-btn" id="btnComptaNextWeek">Suivante &#8250;</button>
+          <button class="week-nav-today" id="btnComptaThisWeek">Cette semaine</button>
+        </div>
+
         <!-- Stats -->
         <div class="stats-grid">
           <div class="stat-card stat-balance">
@@ -526,6 +534,12 @@
 
       <!-- Mes Ventes -->
       <section class="section" id="section-mes-ventes">
+        <div class="week-nav">
+          <button class="week-nav-btn" id="btnMySalesPrevWeek">&#8249; Précédente</button>
+          <span class="week-nav-label" id="mySalesWeekLabel"></span>
+          <button class="week-nav-btn" id="btnMySalesNextWeek">Suivante &#8250;</button>
+          <button class="week-nav-today" id="btnMySalesThisWeek">Cette semaine</button>
+        </div>
         <div class="my-sales-toolbar">
           <div class="my-sales-summary" id="mySalesSummary"></div>
           <button class="btn-refresh" id="btnRefreshMySales" title="Actualiser">↻</button>
@@ -599,6 +613,17 @@
 
       <!-- Admin -->
       <section class="section" id="section-admin">
+        <!-- Réinitialisation des ventes -->
+        <div class="admin-users-card admin-danger-card">
+          <div class="admin-card-header">
+            <h2 class="form-title" style="margin:0">🗑️ Réinitialisation des ventes</h2>
+          </div>
+          <div class="admin-invite-body">
+            <p class="admin-invite-desc">Supprime définitivement <strong>toutes les ventes enregistrées</strong> ainsi que leurs transactions comptables associées. Cette action est irréversible.</p>
+            <button class="btn-danger" id="btnResetAllSales">Réinitialiser toutes les ventes</button>
+          </div>
+        </div>
+
         <!-- Code d'inscription du jour -->
         <div class="admin-users-card admin-invite-card">
           <div class="admin-card-header">

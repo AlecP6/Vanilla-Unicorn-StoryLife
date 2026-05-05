@@ -5,16 +5,31 @@ const { addLog } = require('./logs');
 
 const router = express.Router();
 
-// GET /api/transactions
+// GET /api/transactions — liste des transactions (filtrable par semaine via ?week_start=YYYY-MM-DD)
 router.get('/', auth, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT t.id, t.type, t.member, t.motif, t.amount, t.created_at,
-              u.rp_name AS created_by_name
-       FROM transactions t
-       LEFT JOIN users u ON t.created_by = u.id
-       ORDER BY t.created_at DESC`
-    );
+    const { week_start } = req.query;
+    let result;
+    if (week_start && /^\d{4}-\d{2}-\d{2}$/.test(week_start)) {
+      result = await pool.query(
+        `SELECT t.id, t.type, t.member, t.motif, t.amount, t.created_at,
+                u.rp_name AS created_by_name
+         FROM transactions t
+         LEFT JOIN users u ON t.created_by = u.id
+         WHERE t.created_at >= $1::date
+           AND t.created_at < ($1::date + INTERVAL '7 days')
+         ORDER BY t.created_at DESC`,
+        [week_start]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT t.id, t.type, t.member, t.motif, t.amount, t.created_at,
+                u.rp_name AS created_by_name
+         FROM transactions t
+         LEFT JOIN users u ON t.created_by = u.id
+         ORDER BY t.created_at DESC`
+      );
+    }
     res.json(result.rows);
   } catch (err) {
     console.error('Get transactions error:', err);

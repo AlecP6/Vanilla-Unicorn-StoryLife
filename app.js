@@ -369,10 +369,36 @@ menuToggle?.addEventListener('click', () => {
 
 sidebarOverlay?.addEventListener('click', closeSidebar);
 
+// ===== HELPERS SEMAINE =====
+// Retourne le lundi de la semaine courante + offset semaines (offset=0 → semaine en cours).
+function getWeekMonday(offset) {
+  const today = new Date();
+  const dow   = today.getDay();
+  const diff  = dow === 0 ? -6 : 1 - dow; // recule jusqu'au lundi
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff + (offset || 0) * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function dateToISO(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function formatWeekLabel(monday) {
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const opts  = { day: '2-digit', month: 'short' };
+  const from  = monday.toLocaleDateString('fr-FR', opts);
+  const to    = sunday.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return `Semaine du ${from} au ${to}`;
+}
+
 // ===== COMPTABILITÉ =====
 // Cache local des transactions et filtre courant ('all' | 'entree' | 'sortie').
-let transactions = [];
-let activeFilter = 'all';
+let transactions    = [];
+let activeFilter    = 'all';
+let comptaWeekOffset = 0;
 
 // Construit les en-têtes HTTP communs pour toutes les requêtes authentifiées :
 // Content-Type JSON + JWT Bearer token issu de la session en cours.
@@ -380,16 +406,26 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` };
 }
 
-// Récupère toutes les transactions depuis l'API, met à jour le cache local,
-// puis déclenche : rendu du tableau, calcul des stats et tableau des cotisations.
+function updateComptaWeekNav() {
+  const monday = getWeekMonday(comptaWeekOffset);
+  const labelEl = document.getElementById('comptaWeekLabel');
+  if (labelEl) labelEl.textContent = formatWeekLabel(monday);
+  const nextBtn = document.getElementById('btnComptaNextWeek');
+  if (nextBtn) nextBtn.disabled = comptaWeekOffset >= 0;
+}
+
+// Récupère les transactions de la semaine sélectionnée depuis l'API.
 async function fetchTransactions() {
   try {
-    const res  = await fetch(`${API}/transactions`, { headers: authHeaders() });
+    const monday = getWeekMonday(comptaWeekOffset);
+    const params = `?week_start=${dateToISO(monday)}`;
+    const res  = await fetch(`${API}/transactions${params}`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
     transactions = data;
     renderTransactions();
     updateStats();
+    renderBalanceChart(data);
   } catch {
     console.error('Erreur chargement transactions.');
   }
@@ -476,8 +512,23 @@ function escapeHtml(str) {
 }
 
 function refreshComptabilite() {
+  updateComptaWeekNav();
   fetchTransactions();
 }
+
+document.getElementById('btnComptaPrevWeek')?.addEventListener('click', () => {
+  comptaWeekOffset--;
+  refreshComptabilite();
+});
+document.getElementById('btnComptaNextWeek')?.addEventListener('click', () => {
+  if (comptaWeekOffset >= 0) return;
+  comptaWeekOffset++;
+  refreshComptabilite();
+});
+document.getElementById('btnComptaThisWeek')?.addEventListener('click', () => {
+  comptaWeekOffset = 0;
+  refreshComptabilite();
+});
 
 // Type toggle
 document.getElementById('btnEntree')?.addEventListener('click', () => {
@@ -596,9 +647,10 @@ function closeModal(id) {
 }
 
 // ===== VENTES =====
-let saleItems   = [];
-let mySales     = [];
-let saleTarget  = null; // { id, name, price }
+let saleItems        = [];
+let mySales          = [];
+let saleTarget       = null; // { id, name, price }
+let mySalesWeekOffset = 0;
 
 async function fetchSaleItems() {
   try {
@@ -610,9 +662,20 @@ async function fetchSaleItems() {
   } catch { console.error('Erreur chargement articles.'); }
 }
 
+function updateMySalesWeekNav() {
+  const monday  = getWeekMonday(mySalesWeekOffset);
+  const labelEl = document.getElementById('mySalesWeekLabel');
+  if (labelEl) labelEl.textContent = formatWeekLabel(monday);
+  const nextBtn = document.getElementById('btnMySalesNextWeek');
+  if (nextBtn) nextBtn.disabled = mySalesWeekOffset >= 0;
+}
+
 async function fetchMySales() {
+  updateMySalesWeekNav();
   try {
-    const res  = await fetch(`${API}/sales/my`, { headers: authHeaders() });
+    const monday = getWeekMonday(mySalesWeekOffset);
+    const params = `?week_start=${dateToISO(monday)}`;
+    const res  = await fetch(`${API}/sales/my${params}`, { headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) return;
     mySales = data;
@@ -765,6 +828,20 @@ document.getElementById('saleQtyModal')?.addEventListener('click', (e) => {
 });
 
 document.getElementById('btnRefreshMySales')?.addEventListener('click', fetchMySales);
+
+document.getElementById('btnMySalesPrevWeek')?.addEventListener('click', () => {
+  mySalesWeekOffset--;
+  fetchMySales();
+});
+document.getElementById('btnMySalesNextWeek')?.addEventListener('click', () => {
+  if (mySalesWeekOffset >= 0) return;
+  mySalesWeekOffset++;
+  fetchMySales();
+});
+document.getElementById('btnMySalesThisWeek')?.addEventListener('click', () => {
+  mySalesWeekOffset = 0;
+  fetchMySales();
+});
 
 // ===== GROUPES =====
 // Cache local des groupes et terme de recherche en cours.
@@ -1377,6 +1454,23 @@ document.getElementById('vehicleSearch')?.addEventListener('input', (e) => {
 });
 
 // ===== ADMIN =====
+
+document.getElementById('btnResetAllSales')?.addEventListener('click', () => {
+  confirmAction(
+    'Supprimer TOUTES les ventes et leurs transactions associées ? Cette action est irréversible.',
+    async () => {
+      try {
+        const res  = await fetch(`${API}/sales/all`, { method: 'DELETE', headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || 'Erreur.', 'error'); return; }
+        showToast('Toutes les ventes ont été réinitialisées.', 'success');
+        mySales = [];
+        renderSalesHistory();
+      } catch { showToast('Impossible de contacter le serveur.', 'error'); }
+    },
+    'Réinitialiser'
+  );
+});
 
 // Récupère et affiche le code d'inscription du jour dans la section admin.
 async function fetchAdminInviteCode() {
