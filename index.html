@@ -465,57 +465,38 @@
           </div>
         </div>
 
-        <!-- Modal ajout / édition contact -->
+        <!-- Modal ajout / édition client VIP -->
         <div class="modal-overlay" id="groupModal">
-          <div class="modal-box modal-box-lg">
+          <div class="modal-box">
             <div class="modal-header">
-              <h3 id="groupModalTitle">Nouveau contact</h3>
+              <h3 id="groupModalTitle">Nouveau client VIP</h3>
               <button class="modal-close" id="groupModalClose">✕</button>
             </div>
             <div class="modal-body">
               <input type="hidden" id="groupEditId" value="" />
 
-              <div class="group-form-grid">
+              <div class="form-grid">
                 <div class="form-group">
-                  <label class="form-label" for="groupName">Nom / Entreprise</label>
-                  <input type="text" id="groupName" class="form-input" placeholder="ex: Michael De Santa, Maze Bank..." autocomplete="off" />
+                  <label class="form-label" for="groupFirstName">Prénom</label>
+                  <input type="text" id="groupFirstName" class="form-input" placeholder="ex: Michael" autocomplete="off" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="groupColor">🎨 Couleur sur la carte</label>
-                  <div class="color-picker-wrap">
-                    <input type="color" id="groupColor" class="color-picker" value="#d4007a" />
-                    <span class="color-picker-label" id="groupColorLabel">#d4007a</span>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="groupResidence">📍 Lieu de rendez-vous habituel</label>
-                  <input type="text" id="groupResidence" class="form-input" placeholder="ex: Vanilla Unicorn, Maze Tower..." autocomplete="off" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="groupTerritory">💡 Intérêts / Services recherchés</label>
-                  <input type="text" id="groupTerritory" class="form-input" placeholder="ex: Privatisation, VIP Night, Partenariat..." autocomplete="off" />
+                  <label class="form-label" for="groupName">Nom</label>
+                  <input type="text" id="groupName" class="form-input" placeholder="ex: De Santa" autocomplete="off" />
                 </div>
                 <div class="form-group form-group-full">
-                  <label class="form-label">🗺️ Zones associées <span class="form-label-hint">(cliquez pour sélectionner)</span></label>
-                  <div class="zone-selector" id="zoneSelector"></div>
-                </div>
-                <div class="form-group">
                   <label class="form-label" for="groupPhone">📞 Numéro de téléphone</label>
-                  <input type="text" id="groupPhone" class="form-input" placeholder="ex: 555-0199" autocomplete="off" inputmode="numeric" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="groupBusiness">💎 Niveau VIP</label>
-                  <input type="text" id="groupBusiness" class="form-input" placeholder="ex: VIP Gold, VIP Platine, Partenaire..." autocomplete="off" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="groupCompany">🏢 Entreprise / Affiliation</label>
-                  <input type="text" id="groupCompany" class="form-input" placeholder="ex: Maze Bank, Merryweather..." autocomplete="off" />
-                </div>
-                <div class="form-group form-group-full">
-                  <label class="form-label" for="groupNotes">📝 Informations complémentaires</label>
-                  <textarea id="groupNotes" class="form-input form-textarea" placeholder="Préférences, historique, accords conclus..."></textarea>
+                  <input type="text" id="groupPhone" class="form-input" placeholder="ex: 555-0199" autocomplete="off" inputmode="tel" />
                 </div>
               </div>
+
+              <!-- Champs masqués pour compatibilité backend -->
+              <input type="hidden" id="groupResidence" value="" />
+              <input type="hidden" id="groupTerritory" value="" />
+              <input type="hidden" id="groupBusiness"  value="" />
+              <input type="hidden" id="groupCompany"   value="" />
+              <input type="hidden" id="groupNotes"     value="" />
+              <input type="hidden" id="groupColor"     value="#d4007a" />
 
               <div class="auth-error" id="groupError"></div>
             </div>

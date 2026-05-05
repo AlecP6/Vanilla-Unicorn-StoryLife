@@ -835,8 +835,8 @@ function getFilteredGroups() {
   const q = groupSearch.toLowerCase();
   return groups.filter(g =>
     g.name.toLowerCase().includes(q) ||
-    (g.residence  && g.residence.toLowerCase().includes(q)) ||
-    (g.territory  && g.territory.toLowerCase().includes(q))
+    (g.phone && g.phone.toLowerCase().includes(q)) ||
+    (g.residence && g.residence.toLowerCase().includes(q))
   );
 }
 
@@ -855,44 +855,30 @@ function renderGroups() {
 
   list.forEach(g => {
     const card = document.createElement('div');
-    card.className  = 'group-card';
+    card.className  = 'group-card vip-card';
     card.dataset.id = g.id;
 
-    const updatedDate = new Date(g.updated_at).toLocaleDateString('fr-FR', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
+    // Le prénom est stocké dans `residence`, le nom dans `name`
+    const prenom  = g.residence || '';
+    const nom     = g.name      || '';
+    const fullName = prenom && nom ? `${prenom} ${nom.toUpperCase()}` : escapeHtml(nom || prenom || '—');
 
-    const field = (label, value) => `
-      <div class="group-field">
-        <span class="group-field-label">${label}</span>
-        <span class="group-field-value ${value ? '' : 'empty'}">${escapeHtml(value || 'Non renseigné')}</span>
-      </div>`;
+    const initials = ((prenom[0] || '') + (nom[0] || '')).toUpperCase() || '?';
 
     card.innerHTML = `
-      <div class="group-card-header">
-        <span class="group-card-name">
-          ${escapeHtml(g.name)}
-        </span>
+      <div class="vip-card-header">
+        <div class="vip-avatar">${escapeHtml(initials)}</div>
+        <div class="vip-info">
+          <div class="vip-name">${escapeHtml(fullName)}</div>
+          <div class="vip-phone">${g.phone ? `📞 ${escapeHtml(g.phone)}` : '<span style="opacity:.5">Pas de téléphone</span>'}</div>
+        </div>
         <div class="group-card-actions">
-          <button class="btn-edit"  data-group-edit="${g.id}">✏️ Modifier</button>
+          <button class="btn-edit"   data-group-edit="${g.id}">✏️</button>
           <button class="btn-delete" data-group-del="${g.id}">✕</button>
         </div>
       </div>
-      <div class="group-card-body">
-        ${field('📍 Lieu de résidence',   g.residence)}
-        ${field('🗺️ Territoire contrôlé', g.territory)}
-        ${field('📞 Téléphone',           g.phone)}
-        ${field('💼 Business possédé',    g.business)}
-        ${field('🏢 Entreprise possédée', g.company)}
-      </div>
-      ${g.notes ? `
-      <div class="group-card-notes">
-        <span class="group-field-label">📝 Informations complémentaires</span>
-        <div class="group-notes-text">${escapeHtml(g.notes)}</div>
-      </div>` : ''}
-      <div class="group-card-footer">
-        <span>Créé par ${escapeHtml(g.created_by_name || '—')}</span>
-        <span>Mis à jour le ${updatedDate} par ${escapeHtml(g.updated_by_name || '—')}</span>
+      <div class="vip-card-footer">
+        <span>Ajouté par ${escapeHtml(g.created_by_name || '—')}</span>
       </div>
     `;
     grid.appendChild(card);
@@ -921,47 +907,19 @@ document.getElementById('groupsGrid')?.addEventListener('click', (e) => {
   }
 });
 
-// Génère les chips cliquables de sélection de zones dans la modale groupe.
-// Les zones déjà assignées au groupe sont pré-sélectionnées (classe CSS "selected").
-function buildZoneSelector(selectedIds = []) {
-  const container = document.getElementById('zoneSelector');
-  if (!container) return;
-  container.innerHTML = '';
-  GTA_ZONES.forEach(zone => {
-    const chip = document.createElement('span');
-    chip.className   = 'zone-chip' + (selectedIds.includes(zone.id) ? ' selected' : '');
-    chip.textContent = zone.name;
-    chip.dataset.zid = zone.id;
-    chip.addEventListener('click', () => chip.classList.toggle('selected'));
-    container.appendChild(chip);
-  });
-}
-
-// Lit les chips sélectionnées et retourne leurs ids sous forme de chaîne CSV
-// (ex : "paleto_bay,davis") pour stockage en base de données.
-function getSelectedZoneIds() {
-  return Array.from(document.querySelectorAll('#zoneSelector .zone-chip.selected'))
-    .map(c => c.dataset.zid).join(',');
-}
 
 function openGroupModal(group) {
-  document.getElementById('groupModalTitle').textContent = group ? `Modifier : ${group.name}` : 'Nouveau groupe';
+  // Prénom = residence, Nom = name
+  const prenom = group?.residence ?? '';
+  const nom    = group?.name      ?? '';
+
+  document.getElementById('groupModalTitle').textContent = group
+    ? `Modifier : ${prenom} ${nom}`.trim()
+    : 'Nouveau client VIP';
   document.getElementById('groupEditId').value    = group?.id ?? '';
-  document.getElementById('groupName').value      = group?.name      ?? '';
-  document.getElementById('groupResidence').value = group?.residence ?? '';
-  document.getElementById('groupTerritory').value = group?.territory ?? '';
-  document.getElementById('groupPhone').value     = group?.phone     ?? '';
-  document.getElementById('groupBusiness').value  = group?.business  ?? '';
-  document.getElementById('groupCompany').value   = group?.company   ?? '';
-  document.getElementById('groupNotes').value     = group?.notes     ?? '';
-
-  const color = group?.color || '#4caf82';
-  document.getElementById('groupColor').value           = color;
-  document.getElementById('groupColorLabel').textContent = color;
-
-  const selectedZones = group?.zone_ids ? group.zone_ids.split(',').filter(Boolean) : [];
-  buildZoneSelector(selectedZones);
-
+  document.getElementById('groupFirstName').value = prenom;
+  document.getElementById('groupName').value      = nom;
+  document.getElementById('groupPhone').value     = group?.phone ?? '';
   document.getElementById('groupError').textContent = '';
   openModal('groupModal');
 }
@@ -970,28 +928,30 @@ document.getElementById('groupColor')?.addEventListener('input', (e) => {
   document.getElementById('groupColorLabel').textContent = e.target.value;
 });
 
-// Sauvegarder groupe
+// Sauvegarder client VIP
 document.getElementById('btnSaveGroup')?.addEventListener('click', async () => {
-  const id        = document.getElementById('groupEditId').value;
-  const name      = document.getElementById('groupName').value.trim();
-  const residence = document.getElementById('groupResidence').value.trim();
-  const territory = document.getElementById('groupTerritory').value.trim();
-  const phone     = document.getElementById('groupPhone').value.trim();
-  const business  = document.getElementById('groupBusiness').value.trim();
-  const company   = document.getElementById('groupCompany').value.trim();
-  const notes     = document.getElementById('groupNotes').value.trim();
+  const id     = document.getElementById('groupEditId').value;
+  const prenom = document.getElementById('groupFirstName').value.trim();
+  const nom    = document.getElementById('groupName').value.trim();
+  const phone  = document.getElementById('groupPhone').value.trim();
 
-  if (!name) {
-    document.getElementById('groupError').textContent = 'Le nom du groupe est requis.';
+  if (!nom && !prenom) {
+    document.getElementById('groupError').textContent = 'Le nom ou le prénom est requis.';
     return;
   }
 
-  const color    = document.getElementById('groupColor').value;
-  const zone_ids = getSelectedZoneIds();
-  const body = { name, residence, territory, phone, business, company, notes, color, zone_ids };
-  const isEdit  = id !== '';
-  const url     = isEdit ? `${API}/groups/${id}` : `${API}/groups`;
-  const method  = isEdit ? 'PUT' : 'POST';
+  // Prénom stocké dans `residence`, Nom dans `name` — le reste est vide
+  const body = {
+    name:      nom,
+    residence: prenom,
+    phone,
+    territory: '', business: '', company: '', notes: '',
+    color: '#d4007a', zone_ids: '',
+  };
+
+  const isEdit = id !== '';
+  const url    = isEdit ? `${API}/groups/${id}` : `${API}/groups`;
+  const method = isEdit ? 'PUT' : 'POST';
 
   const btn = document.getElementById('btnSaveGroup');
   btn.disabled = true; btn.textContent = 'Enregistrement...';
@@ -1010,9 +970,8 @@ document.getElementById('btnSaveGroup')?.addEventListener('click', async () => {
       groups.unshift(data);
     }
     renderGroups();
-    refreshMapOverlays();
     closeModal('groupModal');
-    showToast(isEdit ? 'Contact modifié.' : 'Contact créé.');
+    showToast(isEdit ? 'Client VIP modifié.' : 'Client VIP ajouté.');
   } catch {
     document.getElementById('groupError').textContent = 'Impossible de contacter le serveur.';
   } finally {
@@ -1026,7 +985,6 @@ async function deleteGroup(id) {
     if (!res.ok) return;
     groups = groups.filter(g => g.id !== id);
     renderGroups();
-    refreshMapOverlays();
   } catch { showToast('Impossible de contacter le serveur.', 'error'); }
 }
 
