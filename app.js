@@ -278,8 +278,15 @@ const sectionTitles = {
   'mes-ventes':   'Mes ventes',
   'groupes':      'Contacts',
   'missions':     'Événements',
+  'dossier':      'Dossier de reprise',
   'admin':        'Administration',
 };
+
+// Injecter la date du dossier
+const dossierDateEl = document.getElementById('dossierDate');
+if (dossierDateEl) {
+  dossierDateEl.textContent = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
 
 // Restore session on load
 const saved = getStoredSession();

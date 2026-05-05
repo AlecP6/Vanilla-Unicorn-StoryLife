@@ -2776,6 +2776,175 @@ body {
   text-transform: uppercase;
 }
 
+/* ===== DOSSIER DE REPRISE ===== */
+.dossier-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+}
+
+.dossier-header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 36px 0 28px;
+}
+
+.dossier-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(212,0,122,0.4));
+}
+
+.dossier-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.dossier-main-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.dossier-subtitle {
+  font-size: 16px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.dossier-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dossier-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), var(--gold), transparent);
+  margin: 28px 0;
+  opacity: 0.4;
+}
+
+.dossier-section {
+  margin-bottom: 8px;
+}
+
+.dossier-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+
+.dossier-section-body p {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.dossier-section-body p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.dossier-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.dossier-list li {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.dossier-list-icon {
+  color: var(--gold);
+  font-size: 10px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dossier-exp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dossier-exp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: border-color var(--transition);
+}
+
+.dossier-exp-card:hover { border-color: var(--accent); }
+
+.dossier-exp-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.dossier-exp-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.dossier-exp-desc {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.dossier-conclusion .dossier-section-body p {
+  font-size: 15px;
+  font-style: italic;
+}
+
+.dossier-signature {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: right;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dossier-sig-title {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gold);
+}
+
+@media (max-width: 640px) {
+  .dossier-exp-grid { grid-template-columns: 1fr; }
+  .dossier-header   { flex-direction: column; text-align: center; }
+}
+
 /* ===== VENTES ===== */
 .sale-category-block {
   margin-bottom: 28px;
