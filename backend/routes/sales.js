@@ -51,17 +51,18 @@ router.post('/', auth, async (req, res) => {
       total     = item.price * qty;
     }
 
-    // Enregistrer la vente
-    const { rows } = await pool.query(`
-      INSERT INTO sales (user_id, item_id, quantity, unit_price, total)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *
-    `, [req.user.id, item_id, qty, unitPrice, total]);
-
-    // Créer automatiquement une transaction comptable (entrée)
-    await pool.query(`
+    // Créer la transaction comptable et récupérer son id
+    const txRes = await pool.query(`
       INSERT INTO transactions (type, member, motif, amount, created_by)
-      VALUES ('entree', $1, $2, $3, $4)
+      VALUES ('entree', $1, $2, $3, $4) RETURNING id
     `, [req.user.rp_name, `Vente — ${item.name} ×${qty}`, total, req.user.id]);
+    const transactionId = txRes.rows[0].id;
+
+    // Enregistrer la vente liée à la transaction
+    const { rows } = await pool.query(`
+      INSERT INTO sales (user_id, item_id, quantity, unit_price, total, transaction_id)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+    `, [req.user.id, item_id, qty, unitPrice, total, transactionId]);
 
     res.status(201).json({ ...rows[0], item_name: item.name, category: item.category });
   } catch { res.status(500).json({ error: 'Erreur serveur.' }); }

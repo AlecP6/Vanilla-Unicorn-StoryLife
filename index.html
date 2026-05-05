@@ -136,6 +136,11 @@
           </a>
         </li>
         <li>
+          <a href="#" class="nav-item" data-section="mes-ventes">
+            <span class="nav-label">Mes ventes</span>
+          </a>
+        </li>
+        <li>
           <a href="#" class="nav-item" data-section="groupes">
             <span class="nav-label">Contacts</span>
           </a>
@@ -359,17 +364,6 @@
         <!-- Catalogue par catégorie -->
         <div id="saleCatalog"></div>
 
-        <!-- Historique des ventes de l'utilisateur -->
-        <div class="sales-history-card">
-          <div class="sales-history-header">
-            <h2 class="form-title" style="margin:0">Mes ventes</h2>
-            <button class="btn-refresh" id="btnRefreshSales" title="Actualiser">↻</button>
-          </div>
-          <div id="salesHistoryList" class="sales-history-list">
-            <p class="admin-empty">Aucune vente enregistrée.</p>
-          </div>
-        </div>
-
         <!-- Modal confirmation quantité -->
         <div class="modal-overlay" id="saleQtyModal">
           <div class="modal-box">
@@ -399,6 +393,19 @@
           </div>
         </div>
 
+      </section>
+
+      <!-- Mes Ventes -->
+      <section class="section" id="section-mes-ventes">
+        <div class="my-sales-toolbar">
+          <div class="my-sales-summary" id="mySalesSummary"></div>
+          <button class="btn-refresh" id="btnRefreshMySales" title="Actualiser">↻</button>
+        </div>
+        <div class="sales-history-card">
+          <div id="salesHistoryList" class="sales-history-list">
+            <p class="admin-empty">Aucune vente enregistrée.</p>
+          </div>
+        </div>
       </section>
 
       <section class="section" id="section-groupes">

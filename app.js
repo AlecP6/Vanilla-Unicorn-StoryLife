@@ -275,6 +275,7 @@ const sectionTitles = {
   'dashboard':    'Dashboard',
   'comptabilite': 'Comptabilité',
   'ventes':       'Ventes',
+  'mes-ventes':   'Mes ventes',
   'groupes':      'Contacts',
   'missions':     'Événements',
   'admin':        'Administration',
@@ -309,6 +310,8 @@ function switchSection(targetId) {
     }
     if (targetId === 'ventes') {
       fetchSaleItems();
+    }
+    if (targetId === 'mes-ventes') {
       fetchMySales();
     }
     if (targetId === 'groupes') {
@@ -645,15 +648,28 @@ function renderSaleCatalog() {
 }
 
 function renderSalesHistory() {
-  const list = document.getElementById('salesHistoryList');
+  const list    = document.getElementById('salesHistoryList');
+  const summary = document.getElementById('mySalesSummary');
   if (!list) return;
+
   if (!mySales.length) {
     list.innerHTML = '<p class="admin-empty">Aucune vente enregistrée.</p>';
+    if (summary) summary.innerHTML = '';
     return;
   }
+
+  const totalGeneral = mySales.reduce((s, v) => s + Number(v.total), 0);
+  if (summary) {
+    summary.innerHTML = `
+      <span class="my-sales-count">${mySales.length} vente${mySales.length > 1 ? 's' : ''}</span>
+      <span class="my-sales-total">Total : ${formatAmount(totalGeneral)}</span>
+    `;
+  }
+
   list.innerHTML = mySales.map(s => `
     <div class="sale-history-row">
       <span class="sale-history-name">${escapeHtml(s.item_name)}</span>
+      <span class="sale-history-cat sale-cat-${escapeHtml(s.category)}">${escapeHtml(s.category)}</span>
       <span class="sale-history-qty">×${s.quantity}</span>
       <span class="sale-history-total">${formatAmount(s.total)}</span>
       <span class="sale-history-date">${new Date(s.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })} ${new Date(s.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>
@@ -741,10 +757,7 @@ document.getElementById('saleQtyModal')?.addEventListener('click', (e) => {
   if (e.target === document.getElementById('saleQtyModal')) closeModal('saleQtyModal');
 });
 
-document.getElementById('btnRefreshSales')?.addEventListener('click', () => {
-  fetchSaleItems();
-  fetchMySales();
-});
+document.getElementById('btnRefreshMySales')?.addEventListener('click', fetchMySales);
 
 // ===== GROUPES =====
 // Cache local des groupes et terme de recherche en cours.

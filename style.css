@@ -2852,10 +2852,26 @@ body {
   gap: 8px;
 }
 
+.my-sales-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.my-sales-summary {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.my-sales-count { font-size: 13px; color: var(--text-secondary); }
+.my-sales-total { font-size: 16px; font-weight: 700; color: var(--gold); }
+
 .sale-history-row {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: 16px;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 14px;
   align-items: center;
   padding: 10px 14px;
   background: var(--bg-surface);
@@ -2867,6 +2883,15 @@ body {
 .sale-history-qty   { color: var(--text-muted); }
 .sale-history-total { color: var(--gold); font-weight: 600; }
 .sale-history-date  { color: var(--text-muted); font-size: 12px; }
+
+.sale-history-cat {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(212,175,55,0.12);
+  color: var(--gold);
+}
 
 .sale-modal-total {
   margin-top: 12px;
