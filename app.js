@@ -249,8 +249,8 @@ function onUserLoggedIn(user) {
   const navGroupAdmin = document.getElementById('navGroupAdmin');
   if (navGroupAdmin) navGroupAdmin.style.display = isDirection(user) ? '' : 'none';
 
-  // Section par défaut : dashboard pour la direction, contacts pour les employés.
-  switchSection(isDirection(user) ? 'dashboard' : 'groupes');
+  // Section par défaut : dashboard pour la direction, ventes pour les employés.
+  switchSection(isDirection(user) ? 'dashboard' : 'ventes');
 }
 
 // Logout
@@ -274,6 +274,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const sectionTitles = {
   'dashboard':    'Dashboard',
   'comptabilite': 'Comptabilité',
+  'ventes':       'Ventes',
   'groupes':      'Contacts',
   'missions':     'Événements',
   'admin':        'Administration',
@@ -305,6 +306,10 @@ function switchSection(targetId) {
   if (currentUser) {
     if (targetId === 'comptabilite') {
       refreshComptabilite();
+    }
+    if (targetId === 'ventes') {
+      fetchSaleItems();
+      fetchMySales();
     }
     if (targetId === 'groupes') {
       fetchGroups();
@@ -579,6 +584,137 @@ function openModal(id) {
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
+
+// ===== VENTES =====
+let saleItems   = [];
+let mySales     = [];
+let saleTarget  = null; // { id, name, price }
+
+async function fetchSaleItems() {
+  try {
+    const res  = await fetch(`${API}/sales/items`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return;
+    saleItems = data;
+    renderSaleCatalog();
+  } catch { console.error('Erreur chargement articles.'); }
+}
+
+async function fetchMySales() {
+  try {
+    const res  = await fetch(`${API}/sales/my`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) return;
+    mySales = data;
+    renderSalesHistory();
+  } catch {}
+}
+
+function renderSaleCatalog() {
+  const catalog = document.getElementById('saleCatalog');
+  if (!catalog) return;
+
+  // Grouper les items par catégorie
+  const categories = {};
+  saleItems.forEach(item => {
+    if (!categories[item.category]) categories[item.category] = [];
+    categories[item.category].push(item);
+  });
+
+  catalog.innerHTML = Object.entries(categories).map(([cat, items]) => `
+    <div class="sale-category-block">
+      <h2 class="sale-category-title">🍹 ${escapeHtml(cat)}</h2>
+      <div class="sale-items-grid">
+        ${items.map(item => `
+          <div class="sale-item-card">
+            <div class="sale-item-name">${escapeHtml(item.name)}</div>
+            <div class="sale-item-price">${formatAmount(item.price)} / unité</div>
+            <button class="btn-submit sale-add-btn" data-sale-item-id="${item.id}" data-sale-item-name="${escapeHtml(item.name)}" data-sale-item-price="${item.price}">
+              + Ajouter
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSalesHistory() {
+  const list = document.getElementById('salesHistoryList');
+  if (!list) return;
+  if (!mySales.length) {
+    list.innerHTML = '<p class="admin-empty">Aucune vente enregistrée.</p>';
+    return;
+  }
+  list.innerHTML = mySales.map(s => `
+    <div class="sale-history-row">
+      <span class="sale-history-name">${escapeHtml(s.item_name)}</span>
+      <span class="sale-history-qty">×${s.quantity}</span>
+      <span class="sale-history-total">${formatAmount(s.total)}</span>
+      <span class="sale-history-date">${new Date(s.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })} ${new Date(s.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</span>
+    </div>
+  `).join('');
+}
+
+// Clic sur "Ajouter" d'un article
+document.getElementById('saleCatalog')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-sale-item-id]');
+  if (!btn) return;
+  saleTarget = {
+    id:    Number(btn.dataset.saleItemId),
+    name:  btn.dataset.saleItemName,
+    price: Number(btn.dataset.saleItemPrice),
+  };
+  document.getElementById('saleItemId').value    = saleTarget.id;
+  document.getElementById('saleQtyTitle').textContent = `Vente — ${saleTarget.name}`;
+  document.getElementById('saleQtyInput').value  = '1';
+  document.getElementById('saleModalTotal').textContent = formatAmount(saleTarget.price);
+  document.getElementById('saleQtyError').textContent   = '';
+  openModal('saleQtyModal');
+});
+
+// Mise à jour du total en live quand la quantité change
+document.getElementById('saleQtyInput')?.addEventListener('input', () => {
+  if (!saleTarget) return;
+  const qty = parseInt(document.getElementById('saleQtyInput').value) || 1;
+  document.getElementById('saleModalTotal').textContent = formatAmount(saleTarget.price * qty);
+});
+
+// Confirmer la vente
+document.getElementById('btnConfirmSale')?.addEventListener('click', async () => {
+  if (!saleTarget) return;
+  const qty = parseInt(document.getElementById('saleQtyInput').value) || 1;
+  const err = document.getElementById('saleQtyError');
+  err.textContent = '';
+  if (qty < 1) { err.textContent = 'Quantité invalide.'; return; }
+
+  const btn = document.getElementById('btnConfirmSale');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
+  try {
+    const res  = await fetch(`${API}/sales`, {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ item_id: saleTarget.id, quantity: qty }),
+    });
+    const data = await res.json();
+    if (!res.ok) { err.textContent = data.error || 'Erreur.'; return; }
+    mySales.unshift(data);
+    renderSalesHistory();
+    closeModal('saleQtyModal');
+    showToast(`Vente enregistrée — ${formatAmount(data.total)}`);
+  } catch { err.textContent = 'Impossible de contacter le serveur.'; }
+  finally { btn.disabled = false; btn.textContent = 'Enregistrer la vente'; }
+});
+
+document.getElementById('saleQtyClose')?.addEventListener('click',  () => closeModal('saleQtyModal'));
+document.getElementById('saleQtyCancel')?.addEventListener('click', () => closeModal('saleQtyModal'));
+document.getElementById('saleQtyModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('saleQtyModal')) closeModal('saleQtyModal');
+});
+
+document.getElementById('btnRefreshSales')?.addEventListener('click', () => {
+  fetchSaleItems();
+  fetchMySales();
+});
 
 // ===== GROUPES =====
 // Cache local des groupes et terme de recherche en cours.
